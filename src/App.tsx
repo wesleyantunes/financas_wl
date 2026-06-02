@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SetupScreen } from './components/SetupScreen';
+import { ExpenseForm } from './components/ExpenseForm';
 import { testConnection, initializeSpreadsheet } from './services/api';
 import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar } from 'lucide-react';
 
@@ -153,11 +154,11 @@ function App() {
         )}
 
         {activeTab === 'new-expense' && (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <PlusCircle size={48} style={{ color: 'var(--color-primary)', marginBottom: '16px' }} />
-            <h2>Novo Lançamento</h2>
-            <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Cadastro de despesa rápida e parcelamentos.</p>
-          </div>
+          <ExpenseForm 
+            url={appUrl} 
+            token={secretToken} 
+            currentUser={currentUser} 
+          />
         )}
 
         {activeTab === 'recurring' && (
