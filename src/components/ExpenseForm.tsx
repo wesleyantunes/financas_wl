@@ -8,7 +8,7 @@ interface ExpenseFormProps {
   currentUser: 'Wesley' | 'Luana';
 }
 
-const DEFAULT_TAGS = ['Alimentação', 'Lazer', 'Transporte', 'Saúde', 'Moradia', 'Educação', 'Supermercado', 'Outros'];
+const DEFAULT_TAGS = ['Alimentação', 'Lazer', 'Transporte', 'Saúde', 'Moradia', 'Educação', 'Supermercado', 'Veículo', 'Outros'];
 
 export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUser }) => {
   const [description, setDescription] = useState('');
