@@ -4,8 +4,8 @@ version: 1.0.0
 updated: 2026-06-01T20:42:00-04:00
 ---
 
-> **Current Phase:** 4 - Dashboard Dinâmico e Polimento Premium (Polish/Launch)
-> **Status:** executing
+> **Current Phase:** —
+> **Status:** completed
 
 ## Must-Haves (from SPEC)
 
@@ -15,7 +15,7 @@ updated: 2026-06-01T20:42:00-04:00
 - [x] Cadastro rápido de despesas individuais e compartilhadas por tag.
 - [x] Sistema inteligente de parcelamento com gravação de múltiplas linhas futuras.
 - [x] Painel de controle de despesas recorrentes (água, energia, Netflix) com ajuste no valor real.
-- [ ] Dashboard minimalista premium com gráficos interativos em Recharts (estilo Sicredi Dark).
+- [x] Dashboard minimalista premium com gráficos interativos em Recharts (estilo Sicredi Dark).
 
 ---
 
@@ -60,14 +60,14 @@ updated: 2026-06-01T20:42:00-04:00
 ---
 
 ### Phase 4: Dashboard Dinâmico e Polimento Premium (Polish/Launch)
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 **Objective:** Criar gráficos e painel consolidados com polimento estético avançado.
 **Depends on:** Phase 3
 **Requirements:** REQ-08, NFR-01, NFR-03
 
 **Plans:**
-- [ ] Plan 4.1: Integrar Recharts e desenvolver gráficos interativos (Pie chart de gastos por tag, Bar chart de Wesley vs. Luana vs. Compartilhado, Line/Bar de evolução mensal).
-- [ ] Plan 4.2: Polimento final de micro-animações (shimmer effects de loading, hover effects, transições de aba) e deploy final na Vercel.
+- [x] Plan 4.1: Integrar Recharts e desenvolver gráficos interativos (Pie chart de gastos por tag, Bar chart de Wesley vs. Luana vs. Compartilhado, Line/Bar de evolução mensal).
+- [x] Plan 4.2: Polimento final de micro-animações (shimmer effects de loading, hover effects, transições de aba) e deploy final na Vercel.
 
 ---
 
@@ -78,7 +78,7 @@ updated: 2026-06-01T20:42:00-04:00
 | 1 | ✅ | 3/3 | 2026-06-01 |
 | 2 | ✅ | 3/3 | 2026-06-01 |
 | 3 | ✅ | 3/3 | 2026-06-01 |
-| 4 | ⬜ | 0/2 | — |
+| 4 | ✅ | 2/2 | 2026-06-01 |
 
 ---
 
@@ -89,4 +89,4 @@ updated: 2026-06-01T20:42:00-04:00
 | 1 | 2026-06-01 | 2026-06-01 | < 1 dia |
 | 2 | 2026-06-01 | 2026-06-01 | < 1 dia |
 | 3 | 2026-06-01 | 2026-06-01 | < 1 dia |
-| 4 | — | — | — |
+| 4 | 2026-06-01 | 2026-06-01 | < 1 dia |
