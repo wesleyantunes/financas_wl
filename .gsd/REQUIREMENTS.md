@@ -1,6 +1,6 @@
 ---
 milestone: v1.0
-updated: 2026-06-01T20:30:00-04:00
+updated: 2026-06-01T20:40:00-04:00
 ---
 
 # Requirements
@@ -15,14 +15,14 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 
 | ID | Requirement | Source | Phase | Status |
 |----|-------------|--------|-------|--------|
-| REQ-01 | Tela de Login com Google OAuth 2.0 (GIS) integrando fluxo de token client-side | SPEC Goal 1 | 1 | Pending |
-| REQ-02 | Busca e criação/formatação automática da planilha "Finanças Compartilhadas Wesley e Luana" no Drive | SPEC Goal 1 | 1 | Pending |
-| REQ-03 | Formulário de lançamento rápido com descrição, valor, data, tags dinâmicas e checkbox "Compartilhado" | SPEC Goal 2 | 2 | Pending |
-| REQ-04 | Direcionamento dos registros para as abas `Despesas [Wesley]` ou `Despesas [Luana]` conforme o usuário autenticado | SPEC Goal 2 | 2 | Pending |
-| REQ-05 | Lançamento de compras parceladas divididas em N linhas futuras com ID de parcelamento único | SPEC Goal 3 | 2 | Pending |
-| REQ-06 | Aba de configuração `Recorrentes` para cadastrar contas recorrentes (Fixas/Variáveis) com valor estimado | SPEC Goal 4 | 3 | Pending |
-| REQ-07 | Painel de "Contas a Pagar/Pendentes" para visualizar estimativas mensais e confirmar os valores reais | SPEC Goal 4 | 3 | Pending |
-| REQ-08 | Dashboard dinâmico exibindo resumo do mês, divisão por dono da despesa, e gráficos por tags usando Recharts | SPEC Goal 5 | 4 | Pending |
+| REQ-01 | Tela de Configuração Inicial / Login onde o usuário insere a URL do Google Apps Script e o Token Secreto | SPEC Goal 2 | 1 | Pending |
+| REQ-02 | Verificação e inicialização automática das abas (`Despesas [Wesley]`, `Despesas [Luana]`, `Recorrentes`) via API do Apps Script | SPEC Goal 1 | 1 | Pending |
+| REQ-03 | Formulário de lançamento rápido com descrição, valor, data, tags dinâmicas padrão e checkbox "Compartilhado" | SPEC Goal 3 | 2 | Pending |
+| REQ-04 | Envio dos registros para a aba correta no Sheets (`Despesas [Wesley]` ou `Despesas [Luana]`) com base no usuário selecionado | SPEC Goal 3 | 2 | Pending |
+| REQ-05 | Expansão automática de compras parceladas em N linhas futuras com ID de parcelamento único enviadas em lote | SPEC Goal 4 | 2 | Pending |
+| REQ-06 | Lançamento e edição de despesas recorrentes (Fixas/Variáveis) salvando-as na aba `Recorrentes` da planilha | SPEC Goal 5 | 3 | Pending |
+| REQ-07 | Painel de "Contas a Pagar/Pendentes" para visualizar previsões mensais e confirmar/ajustar os valores reais | SPEC Goal 5 | 3 | Pending |
+| REQ-08 | Dashboard dinâmico exibindo resumo do mês, divisão por dono da despesa, e gráficos por tags usando Recharts | SPEC Goal 6 | 4 | Pending |
 
 ---
 
@@ -30,10 +30,10 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 
 | ID | Requirement | Category | Phase | Status |
 |----|-------------|----------|-------|--------|
-| NFR-01 | Carregamento rápido (< 1s após login) com cache local dos dados da planilha no estado do React | Performance | 1, 4 | Pending |
-| NFR-02 | Interface mobile-friendly (responsiva) facilitando lançamentos rápidos no smartphone | UX | All | Pending |
-| NFR-03 | Design minimalista com estética premium, dark mode nativo, glassmorphism e micro-animações de carregamento | UX | All | Pending |
-| NFR-04 | Segurança e Privacidade: Processamento 100% no navegador do usuário, sem banco de dados próprio ou backend | Segurança | 1 | Pending |
+| NFR-01 | Carregamento rápido (< 500ms) após configuração inicial com cache em localStorage | Performance | 1, 4 | Pending |
+| NFR-02 | Interface mobile-first totalmente responsiva focada em facilidade de inserção rápida via celular | UX | All | Pending |
+| NFR-03 | Visual Sicredi Dark Mode: tons escuros, acentos em verde Sicredi (#00db75), cartões translúcidos e animações shimmer | UX | All | Pending |
+| NFR-04 | Segurança e Privacidade: Comunicação direta HTTP HTTPS com o Google Apps Script, chaves salvas localmente | Segurança | 1 | Pending |
 
 ---
 
@@ -41,7 +41,7 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 
 | ID | Constraint | Source | Impact |
 |----|------------|--------|--------|
-| CON-01 | Limitações de Cota do Google API | Technical | Requisições devem ser otimizadas e em lote (batch API updates) sempre que possível para evitar rate limiting |
+| CON-01 | Tempo de execução do Google Apps Script | Technical | Limite de 6 minutos por execução (Script limite padrão do Google). As chamadas devem ser enxutas. |
 | CON-02 | Banco de dados restrito ao Google Sheets | SPEC | Toda a modelagem de dados precisa caber em formato de tabelas planas do Sheets |
 
 ---
@@ -50,10 +50,10 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 
 | Requirement | Plans | Tests | Status |
 |-------------|-------|-------|--------|
-| REQ-01 | Phase 1 Setup | Login, Logout verification | — |
-| REQ-02 | Phase 1 Setup | Create sheet if not exists, verify tabs structure | — |
+| REQ-01 | Phase 1 Setup | Input credentials, verify saving in localStorage | — |
+| REQ-02 | Phase 1 Setup | Make GET request to test connection, check if tabs are created if they don't exist | — |
 | REQ-03 | Phase 2 Lançamentos | Submit standard expense, verify row insertion | — |
-| REQ-04 | Phase 2 Lançamentos | Log in as Wesley and Luana, check sheet tabs routing | — |
+| REQ-04 | Phase 2 Lançamentos | Log as Wesley or Luana, check sheet tabs routing | — |
 | REQ-05 | Phase 2 Lançamentos | Submit 3x installment, verify 3 rows added | — |
 | REQ-06 | Phase 3 Recorrentes | Save recurring rules in `Recorrentes` tab | — |
 | REQ-07 | Phase 3 Recorrentes | Fetch rules, modify value of variable bill, confirm, check commit to despesas tab | — |

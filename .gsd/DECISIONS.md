@@ -4,24 +4,28 @@
 
 ## Decisions
 
-### [DEC-001] Client-Side Google API & OAuth 2.0 Flow
+### [DEC-001] Integração com Google Sheets via Google Apps Script Web App
 **Date**: 2026-06-01
 **Status**: Accepted
 
 #### Context
-A ferramenta necessita se autenticar com o ecossistema do Google do usuário para ler e gravar dados nas planilhas do Google Sheets e Drive. Precisamos decidir se usaremos um servidor intermediário para o fluxo OAuth ou se faremos tudo no navegador.
+A ferramenta necessita ler e gravar dados nas planilhas do Google Sheets. O uso de OAuth 2.0 padrão exige a criação de um projeto no Google Cloud Console, configuração de tela de consentimento, manipulação de tokens que expiram a cada 1 hora, além de expor barreiras de configuração complexas para o usuário.
 
 #### Decision
-Usar o fluxo implicit-flow (Token Client) do Google Identity Services (GIS) diretamente no frontend React. O token de acesso de 1 hora gerado é armazenado em memória (`sessionStorage`) para realizar requisições diretas de API a partir do navegador.
+Usar um script do **Google Apps Script** implantado como "Web App" diretamente na planilha do usuário. O frontend React fará requisições HTTP (GET/POST) diretamente para a URL do Web App gerada. O acesso é protegido por uma **senha/token secreta customizada** definida no código do script e no frontend.
 
 #### Rationale
-Isso permite hospedar o aplicativo estaticamente e de graça na Vercel, além de garantir privacidade total (os dados financeiros nunca passam por um servidor intermediário).
+- **100% Gratuito:** O tráfego e a execução rodam inteiramente dentro da infraestrutura gratuita do Google Drive/Sheets.
+- **Sem Cloud Console:** Dispensa a criação de projetos complexos no Google Cloud Console, obtenção de Client IDs ou API Keys.
+- **Persistência Simples:** A URL do Web App e o token secreto são salvos no `localStorage` do navegador do usuário, eliminando a necessidade de logins recorrentes de 1 em 1 hora.
+- **Privacidade Extrema:** O app web faz requisições diretas do navegador do usuário para o script da planilha dele, sem passar por servidores intermediários de terceiros.
 
 #### Consequences
-- Token expira em 1 hora, necessitando que o usuário renove a autenticação. Mitigaremos isso guardando rascunhos em progresso no `localStorage` antes de redirecionar para re-login se a chamada falhar com status 401.
+- Requer que o usuário copie e cole um script nas configurações da planilha dele uma única vez e implante como Web App. O app exibirá um passo a passo visual e didático na tela de configuração inicial para auxiliar o usuário.
 
 #### Alternatives Considered
-- **Authorization Code Flow com Servidor Backend:** Descartado devido à complexidade acrescida de hospedar e gerenciar um servidor seguro com banco de dados para guardar `refresh_tokens`.
+- **Google Identity Services (GIS) OAuth 2.0 Client-Side:** Descartado devido à complexidade de setup do Cloud Console para usuários leigos e expiração constante de tokens de acesso de 1 hora.
+- **Servidor Backend Intermediário:** Descartado devido aos custos de hospedagem e complexidade de segurança ao manusear chaves de terceiros.
 
 ---
 
@@ -40,6 +44,21 @@ Isso torna a planilha legível e computável por fórmulas simples nativas do Go
 
 #### Consequences
 - Grava N linhas de uma vez na planilha. Caso o usuário queira cancelar ou alterar parcelas no futuro, o app precisa buscar todas as linhas correspondentes ao ID de parcelamento para atualizá-las.
+
+---
+
+### [DEC-003] Identidade Visual (Estilo Sicredi Dark Mode)
+**Date**: 2026-06-01
+**Status**: Accepted
+
+#### Context
+Definir uma identidade visual moderna e agradável para a gestão financeira do casal.
+
+#### Decision
+Adotar o estilo do Sicredi (marcações em verde vibrante `#00db75` / `#00a859`) em uma interface Dark Mode premium, utilizando componentes glassmorphic (translúcidos) e animações shimmer de carregamento.
+
+#### Rationale
+Oferece um visual familiar e limpo, reduzindo fadiga ocular e dando um aspecto extremamente moderno e premium à ferramenta.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 milestone: v1.0
 version: 1.0.0
-updated: 2026-06-01T20:32:00-04:00
+updated: 2026-06-01T20:42:00-04:00
 ---
 
 # Roadmap
@@ -11,12 +11,13 @@ updated: 2026-06-01T20:32:00-04:00
 
 ## Must-Haves (from SPEC)
 
-- [ ] Autenticação Google OAuth 2.0 client-side integrada.
+- [ ] Tela de Configuração inicial do Web App URL e Token Secreto do Google Apps Script.
+- [ ] Script Google Apps Script robusto pronto para manipulação e inicialização da planilha.
 - [ ] Detecção automática e criação da planilha estruturada com abas Wesley/Luana/Recorrentes.
 - [ ] Cadastro rápido de despesas individuais e compartilhadas por tag.
 - [ ] Sistema inteligente de parcelamento com gravação de múltiplas linhas futuras.
 - [ ] Painel de controle de despesas recorrentes (água, energia, Netflix) com ajuste no valor real.
-- [ ] Dashboard minimalista premium com gráficos interativos em Recharts.
+- [ ] Dashboard minimalista premium com gráficos interativos em Recharts (estilo Sicredi Dark).
 
 ---
 
@@ -24,13 +25,13 @@ updated: 2026-06-01T20:32:00-04:00
 
 ### Phase 1: Setup e Autenticação (Foundation)
 **Status:** ⬜ Not Started
-**Objective:** Inicializar o projeto Vite+React, integrar as APIs do Google (OAuth 2.0, Drive, Sheets) e implementar a criação/descoberta automática da planilha.
-**Requirements:** REQ-01, REQ-02, NFR-04
+**Objective:** Inicializar o projeto Vite+React+TypeScript, desenvolver o design system (Sicredi Dark Mode), programar a API do Google Apps Script e implementar a tela de configuração de credenciais no frontend com validação de conexão.
+**Requirements:** REQ-01, REQ-02, NFR-03, NFR-04
 
 **Plans:**
-- [ ] Plan 1.1: Inicializar estrutura do projeto React (Vite) e design system CSS (variáveis de cores, reset, dark mode).
-- [ ] Plan 1.2: Implementar autenticação Google Identity Services (GIS) no React e fluxo de conexão de escopos de API.
-- [ ] Plan 1.3: Desenvolver lógica de verificação, busca da planilha no Drive e criação automática com a estrutura de abas correta se não encontrada.
+- [ ] Plan 1.1: Inicializar estrutura do projeto React (Vite/TypeScript) e design system CSS (variáveis de cores Sicredi Dark Mode, reset, estilos base).
+- [ ] Plan 1.2: Desenvolver o código completo do Google Apps Script (arquivo local no repositório) e tela de configuração inicial no frontend (URL + Token Secreto) com salvamento em localStorage.
+- [ ] Plan 1.3: Implementar teste de conexão e inicialização/verificação automática das abas (`Despesas [Wesley]`, `Despesas [Luana]`, `Recorrentes`) na planilha do Sheets através do Apps Script.
 
 ---
 
@@ -41,7 +42,7 @@ updated: 2026-06-01T20:32:00-04:00
 **Requirements:** REQ-03, REQ-04, REQ-05, NFR-02
 
 **Plans:**
-- [ ] Plan 2.1: Desenvolver a interface do formulário de lançamento (Mobile-First, glassmorphic UI) e lógica de tags rápidas.
+- [ ] Plan 2.1: Desenvolver a interface do formulário de lançamento (Mobile-First, Sicredi Dark glassmorphic UI) e lógica de tags rápidas padrões.
 - [ ] Plan 2.2: Implementar a lógica de gravação para a respectiva aba (`Despesas [Wesley]` ou `Despesas [Luana]`) e tratamento de marcação compartilhada.
 - [ ] Plan 2.3: Desenvolver algoritmo de parcelamento (geração e inserção em lote de N parcelas com IDs vinculados).
 
