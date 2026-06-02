@@ -120,6 +120,23 @@ function doPost(e) {
       return createJsonResponse({ success: true, count: numRows });
     }
 
+    // Ação: Adicionar Regra Recorrente
+    if (action === 'addRecurringRule') {
+      const rule = requestData.rule; // Array de valores: [id, descricao, valorEstimado, diaVencimento, tipo, dono, ativo]
+      
+      if (!rule || !rule.length) {
+        return createJsonResponse({ success: false, error: 'Dados da regra não especificados' }, 400);
+      }
+      
+      const sheet = spreadsheet.getSheetByName('Recorrentes');
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "Recorrentes" não encontrada na planilha' }, 404);
+      }
+      
+      sheet.appendRow(rule);
+      return createJsonResponse({ success: true });
+    }
+
     // Fallback para ações não suportadas ainda nesta fase
     return createJsonResponse({ success: false, error: 'Ação "' + action + '" desconhecida ou não implementada.' }, 400);
     

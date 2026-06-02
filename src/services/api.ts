@@ -74,3 +74,14 @@ export async function addExpenses(
 ): Promise<any> {
   return await request(url, token, 'addExpenses', { tabName, expenses });
 }
+
+/**
+ * Adiciona uma nova regra de despesa recorrente na aba Recorrentes da planilha
+ */
+export async function addRecurringRule(
+  url: string, 
+  token: string, 
+  rule: any[]
+): Promise<any> {
+  return await request(url, token, 'addRecurringRule', { rule });
+}
