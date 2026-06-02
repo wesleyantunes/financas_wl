@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SetupScreen } from './components/SetupScreen';
 import { ExpenseForm } from './components/ExpenseForm';
+import { RecurringPanel } from './components/RecurringPanel';
 import { testConnection, initializeSpreadsheet } from './services/api';
 import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar } from 'lucide-react';
 
@@ -162,11 +163,11 @@ function App() {
         )}
 
         {activeTab === 'recurring' && (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Calendar size={48} style={{ color: 'var(--color-primary)', marginBottom: '16px' }} />
-            <h2>Despesas Recorrentes</h2>
-            <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Planejamento mensal e contas a pagar.</p>
-          </div>
+          <RecurringPanel 
+            url={appUrl} 
+            token={secretToken} 
+            currentUser={currentUser} 
+          />
         )}
       </main>
 
