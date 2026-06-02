@@ -4,8 +4,8 @@ version: 1.0.0
 updated: 2026-06-01T20:42:00-04:00
 ---
 
-> **Current Phase:** —
-> **Status:** completed
+> **Current Phase:** 5 - Histórico de Despesas e Separação de Recorrentes (Management & Grouping)
+> **Status:** executing
 
 ## Must-Haves (from SPEC)
 
@@ -16,6 +16,8 @@ updated: 2026-06-01T20:42:00-04:00
 - [x] Sistema inteligente de parcelamento com gravação de múltiplas linhas futuras.
 - [x] Painel de controle de despesas recorrentes (água, energia, Netflix) com ajuste no valor real.
 - [x] Dashboard minimalista premium com gráficos interativos em Recharts (estilo Sicredi Dark).
+- [ ] Listagem de despesas lançadas com funcionalidade de edição e exclusão.
+- [ ] Separação e visualização de pagamentos recorrentes por pessoa (Wesley / Luana / Compartilhado).
 
 ---
 
@@ -71,6 +73,17 @@ updated: 2026-06-01T20:42:00-04:00
 
 ---
 
+### Phase 5: Histórico de Despesas e Separação de Recorrentes (Management & Grouping)
+**Status:** ⬜ Not Started
+**Objective:** Criar aba de histórico para listagem, edição e exclusão de despesas, e organizar as contas recorrentes por pessoa (Wesley/Luana) em tabelas separadas.
+**Depends on:** Phase 4
+**Requirements:** REQ-09, REQ-10
+
+**Plans:**
+- [ ] TBD (run /plan 5 to create)
+
+---
+
 ## Progress Summary
 
 | Phase | Status | Plans | Complete |
@@ -79,6 +92,7 @@ updated: 2026-06-01T20:42:00-04:00
 | 2 | ✅ | 3/3 | 2026-06-01 |
 | 3 | ✅ | 3/3 | 2026-06-01 |
 | 4 | ✅ | 2/2 | 2026-06-01 |
+| 5 | ⬜ | 0/0 | — |
 
 ---
 
@@ -90,3 +104,4 @@ updated: 2026-06-01T20:42:00-04:00
 | 2 | 2026-06-01 | 2026-06-01 | < 1 dia |
 | 3 | 2026-06-01 | 2026-06-01 | < 1 dia |
 | 4 | 2026-06-01 | 2026-06-01 | < 1 dia |
+| 5 | — | — | — |

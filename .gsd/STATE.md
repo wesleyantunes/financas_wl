@@ -1,5 +1,5 @@
 ---
-updated: 2026-06-01T21:19:00-04:00
+updated: 2026-06-01T21:25:00-04:00
 ---
 
 # Project State
@@ -7,18 +7,18 @@ updated: 2026-06-01T21:19:00-04:00
 ## Current Position
 
 **Milestone:** v1.0
-**Phase:** 4 (completed)
-**Task:** All tasks complete
-**Status:** Verified
+**Phase:** 5 (Ready for planning)
+**Task:** All tasks pending
+**Status:** Ready for planning
 **Plan:** —
 
 ## Last Action
 
-Fase 4 executada e verificada com sucesso. Desenvolvidos o componente Dashboard.tsx com visualizações Recharts, KPIs de acerto de contas e polimento com shimmer loading no design Sicredi Dark.
+Adicionada a Fase 5 ao roadmap contendo a gestão histórica de despesas e separação de recorrentes por pessoa.
 
 ## Next Steps
 
-1. Milestone v1.0 Concluído! 🎉
+1. `/plan 5` — Criar os planos de execução para a Fase 5.
 
 ## Active Decisions
 

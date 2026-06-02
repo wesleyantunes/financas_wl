@@ -22,7 +22,9 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 | REQ-05 | Expansão automática de compras parceladas em N linhas futuras com ID de parcelamento único enviadas em lote | SPEC Goal 4 | 2 | Complete |
 | REQ-06 | Lançamento e edição de despesas recorrentes (Fixas/Variáveis) salvando-as na aba `Recorrentes` da planilha | SPEC Goal 5 | 3 | Complete |
 | REQ-07 | Painel de "Contas a Pagar/Pendentes" para visualizar previsões mensais e confirmar/ajustar os valores reais | SPEC Goal 5 | 3 | Complete |
-| REQ-08 | Dashboard dinâmico exibindo resumo do mês, divisão por dono da despesa, e gráficos por tags usando Recharts | SPEC Goal 6 | 4 | Pending |
+| REQ-08 | Dashboard dinâmico exibindo resumo do mês, divisão por dono da despesa, e gráficos por tags usando Recharts | SPEC Goal 6 | 4 | Complete |
+| REQ-09 | Visualização das despesas lançadas com possibilidade de edição e exclusão | SPEC Goal 7 | 5 | Pending |
+| REQ-10 | Separação das contas recorrentes por pessoa (Wesley / Luana / Compartilhado) em tabelas independentes | SPEC Goal 7 | 5 | Pending |
 
 ---
 
@@ -57,7 +59,9 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 | REQ-05 | Phase 2 Lançamentos | Submit 3x installment, verify 3 rows added | Complete |
 | REQ-06 | Phase 3 Recorrentes | Save recurring rules in `Recorrentes` tab | Complete |
 | REQ-07 | Phase 3 Recorrentes | Fetch rules, modify value of variable bill, confirm, check commit to despesas tab | Complete |
-| REQ-08 | Phase 4 Dashboard | Load Recharts, verify interactive tooltip and filters | — |
+| REQ-08 | Phase 4 Dashboard | Load Recharts, verify interactive tooltip and filters | Complete |
+| REQ-09 | Phase 5 Histórico | List, edit, and delete expense rows, verify updates in sheet | — |
+| REQ-10 | Phase 5 Histórico | Check if recurring bills are separated by owner in the UI | — |
 
 ---
 
