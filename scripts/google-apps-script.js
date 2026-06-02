@@ -96,6 +96,30 @@ function doPost(e) {
       return createJsonResponse({ success: true, results });
     }
     
+    // Ação: Adicionar Despesas em Lote
+    if (action === 'addExpenses') {
+      const tabName = requestData.tabName;
+      const expenses = requestData.expenses; // Array bidimensional [[col1, col2, ...], ...]
+      
+      if (!tabName || !expenses || !expenses.length) {
+        return createJsonResponse({ success: false, error: 'Aba ou transações não especificadas' }, 400);
+      }
+      
+      const sheet = spreadsheet.getSheetByName(tabName);
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "' + tabName + '" não encontrada na planilha' }, 404);
+      }
+      
+      const startRow = sheet.getLastRow() + 1;
+      const numRows = expenses.length;
+      const numCols = expenses[0].length;
+      
+      const range = sheet.getRange(startRow, 1, numRows, numCols);
+      range.setValues(expenses);
+      
+      return createJsonResponse({ success: true, count: numRows });
+    }
+
     // Fallback para ações não suportadas ainda nesta fase
     return createJsonResponse({ success: false, error: 'Ação "' + action + '" desconhecida ou não implementada.' }, 400);
     

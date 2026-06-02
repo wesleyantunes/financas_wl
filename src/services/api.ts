@@ -62,3 +62,15 @@ export async function testConnection(url: string, token: string): Promise<boolea
 export async function initializeSpreadsheet(url: string, token: string): Promise<any> {
   return await request(url, token, 'initialize');
 }
+
+/**
+ * Adiciona uma lista de transações na aba correspondente da planilha (em lote)
+ */
+export async function addExpenses(
+  url: string, 
+  token: string, 
+  tabName: string, 
+  expenses: any[][]
+): Promise<any> {
+  return await request(url, token, 'addExpenses', { tabName, expenses });
+}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addExpenses } from '../services/api';
 import { Landmark, Calendar, FileText, Tag, Users, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface ExpenseFormProps {
@@ -42,8 +43,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
       return;
     }
 
+    const parsedInstallments = parseInt(installments);
     if (isInstallment) {
-      const parsedInstallments = parseInt(installments);
       if (isNaN(parsedInstallments) || parsedInstallments < 2) {
         setError('O número de parcelas deve ser no mínimo 2.');
         return;
@@ -53,12 +54,56 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
     setSubmitting(true);
 
     try {
-      // O algoritmo de parcelamento e envio à API real será implementado no Plan 2.2.
-      // Aqui criamos a lógica de validação básica. Em 2.2, chamaremos a API.
-      console.log('Sending transaction to:', url, 'with token configured:', !!token);
-      
-      // Simulação rápida para o Plan 2.1 compilar e demonstrar a navegação
-      setToastMessage(isInstallment ? `${installments} parcelas geradas com sucesso!` : 'Despesa cadastrada com sucesso!');
+      const generatedExpenses: any[][] = [];
+      const baseDate = new Date(date + 'T00:00:00'); // Carrega em Hora Local do Navegador
+
+      const formatLocalDate = (d: Date): string => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+
+      if (isInstallment) {
+        const installmentValue = parseFloat((parsedValue / parsedInstallments).toFixed(2));
+        const installmentGroupId = `inst_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        
+        for (let i = 0; i < parsedInstallments; i++) {
+          const targetDate = new Date(baseDate);
+          targetDate.setMonth(baseDate.getMonth() + i);
+          
+          const formattedDate = formatLocalDate(targetDate);
+          const id = `tx_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`;
+          const desc = `${description} (${String(i + 1).padStart(2, '0')}/${String(parsedInstallments).padStart(2, '0')})`;
+          
+          generatedExpenses.push([
+            id,
+            formattedDate,
+            desc,
+            installmentValue,
+            selectedTag,
+            isShared,
+            installmentGroupId
+          ]);
+        }
+      } else {
+        const id = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        generatedExpenses.push([
+          id,
+          date,
+          description,
+          parsedValue,
+          selectedTag,
+          isShared,
+          "" // Sem ID de parcelamento
+        ]);
+      }
+
+      const tabName = `Despesas [${currentUser}]`;
+      await addExpenses(url, token, tabName, generatedExpenses);
+
+      // Feedback de Sucesso
+      setToastMessage(isInstallment ? `${parsedInstallments} parcelas gravadas com sucesso!` : 'Despesa cadastrada com sucesso!');
       
       // Limpeza do formulário
       setDescription('');
