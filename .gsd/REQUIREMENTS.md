@@ -15,8 +15,8 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 
 | ID | Requirement | Source | Phase | Status |
 |----|-------------|--------|-------|--------|
-| REQ-01 | Tela de Configuração Inicial / Login onde o usuário insere a URL do Google Apps Script e o Token Secreto | SPEC Goal 2 | 1 | Pending |
-| REQ-02 | Verificação e inicialização automática das abas (`Despesas [Wesley]`, `Despesas [Luana]`, `Recorrentes`) via API do Apps Script | SPEC Goal 1 | 1 | Pending |
+| REQ-01 | Tela de Configuração Inicial / Login onde o usuário insere a URL do Google Apps Script e o Token Secreto | SPEC Goal 2 | 1 | Complete |
+| REQ-02 | Verificação e inicialização automática das abas (`Despesas [Wesley]`, `Despesas [Luana]`, `Recorrentes`) via API do Apps Script | SPEC Goal 1 | 1 | Complete |
 | REQ-03 | Formulário de lançamento rápido com descrição, valor, data, tags dinâmicas padrão e checkbox "Compartilhado" | SPEC Goal 3 | 2 | Pending |
 | REQ-04 | Envio dos registros para a aba correta no Sheets (`Despesas [Wesley]` ou `Despesas [Luana]`) com base no usuário selecionado | SPEC Goal 3 | 2 | Pending |
 | REQ-05 | Expansão automática de compras parceladas em N linhas futuras com ID de parcelamento único enviadas em lote | SPEC Goal 4 | 2 | Pending |
@@ -30,10 +30,10 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 
 | ID | Requirement | Category | Phase | Status |
 |----|-------------|----------|-------|--------|
-| NFR-01 | Carregamento rápido (< 500ms) após configuração inicial com cache em localStorage | Performance | 1, 4 | Pending |
+| NFR-01 | Carregamento rápido (< 500ms) após configuração inicial com cache em localStorage | Performance | 1, 4 | In Progress |
 | NFR-02 | Interface mobile-first totalmente responsiva focada em facilidade de inserção rápida via celular | UX | All | Pending |
-| NFR-03 | Visual Sicredi Dark Mode: tons escuros, acentos em verde Sicredi (#00db75), cartões translúcidos e animações shimmer | UX | All | Pending |
-| NFR-04 | Segurança e Privacidade: Comunicação direta HTTP HTTPS com o Google Apps Script, chaves salvas localmente | Segurança | 1 | Pending |
+| NFR-03 | Visual Sicredi Dark Mode: tons escuros, acentos em verde Sicredi (#00db75), cartões translúcidos e animações shimmer | UX | All | In Progress |
+| NFR-04 | Segurança e Privacidade: Comunicação direta HTTP HTTPS com o Google Apps Script, chaves salvas localmente | Segurança | 1 | Complete |
 
 ---
 
@@ -50,8 +50,8 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 
 | Requirement | Plans | Tests | Status |
 |-------------|-------|-------|--------|
-| REQ-01 | Phase 1 Setup | Input credentials, verify saving in localStorage | — |
-| REQ-02 | Phase 1 Setup | Make GET request to test connection, check if tabs are created if they don't exist | — |
+| REQ-01 | Phase 1 Setup | Input credentials, verify saving in localStorage | Complete |
+| REQ-02 | Phase 1 Setup | Make GET request to test connection, check if tabs are created if they don't exist | Complete |
 | REQ-03 | Phase 2 Lançamentos | Submit standard expense, verify row insertion | — |
 | REQ-04 | Phase 2 Lançamentos | Log as Wesley or Luana, check sheet tabs routing | — |
 | REQ-05 | Phase 2 Lançamentos | Submit 3x installment, verify 3 rows added | — |

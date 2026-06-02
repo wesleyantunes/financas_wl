@@ -4,16 +4,14 @@ version: 1.0.0
 updated: 2026-06-01T20:42:00-04:00
 ---
 
-# Roadmap
-
-> **Current Phase:** Not started
-> **Status:** planning
+> **Current Phase:** 2 - Lançamento de Despesas e Parcelamentos (Core Feature 1)
+> **Status:** executing
 
 ## Must-Haves (from SPEC)
 
-- [ ] Tela de Configuração inicial do Web App URL e Token Secreto do Google Apps Script.
-- [ ] Script Google Apps Script robusto pronto para manipulação e inicialização da planilha.
-- [ ] Detecção automática e criação da planilha estruturada com abas Wesley/Luana/Recorrentes.
+- [x] Tela de Configuração inicial do Web App URL e Token Secreto do Google Apps Script.
+- [x] Script Google Apps Script robusto pronto para manipulação e inicialização da planilha.
+- [x] Detecção automática e criação da planilha estruturada com abas Wesley/Luana/Recorrentes.
 - [ ] Cadastro rápido de despesas individuais e compartilhadas por tag.
 - [ ] Sistema inteligente de parcelamento com gravação de múltiplas linhas futuras.
 - [ ] Painel de controle de despesas recorrentes (água, energia, Netflix) com ajuste no valor real.
@@ -24,14 +22,14 @@ updated: 2026-06-01T20:42:00-04:00
 ## Phases
 
 ### Phase 1: Setup e Autenticação (Foundation)
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 **Objective:** Inicializar o projeto Vite+React+TypeScript, desenvolver o design system (Sicredi Dark Mode), programar a API do Google Apps Script e implementar a tela de configuração de credenciais no frontend com validação de conexão.
 **Requirements:** REQ-01, REQ-02, NFR-03, NFR-04
 
 **Plans:**
-- [ ] Plan 1.1: Inicializar estrutura do projeto React (Vite/TypeScript) e design system CSS (variáveis de cores Sicredi Dark Mode, reset, estilos base).
-- [ ] Plan 1.2: Desenvolver o código completo do Google Apps Script (arquivo local no repositório) e tela de configuração inicial no frontend (URL + Token Secreto) com salvamento em localStorage.
-- [ ] Plan 1.3: Implementar teste de conexão e inicialização/verificação automática das abas (`Despesas [Wesley]`, `Despesas [Luana]`, `Recorrentes`) na planilha do Sheets através do Apps Script.
+- [x] Plan 1.1: Inicializar estrutura do projeto React (Vite/TypeScript) e design system CSS (variáveis de cores Sicredi Dark Mode, reset, estilos base).
+- [x] Plan 1.2: Desenvolver o código completo do Google Apps Script (arquivo local no repositório) e tela de configuração inicial no frontend (URL + Token Secreto) com salvamento em localStorage.
+- [x] Plan 1.3: Implementar teste de conexão e inicialização/verificação automática das abas (`Despesas [Wesley]`, `Despesas [Luana]`, `Recorrentes`) na planilha do Sheets através do Apps Script.
 
 ---
 
@@ -77,7 +75,7 @@ updated: 2026-06-01T20:42:00-04:00
 
 | Phase | Status | Plans | Complete |
 |-------|--------|-------|----------|
-| 1 | ⬜ | 0/3 | — |
+| 1 | ✅ | 3/3 | 2026-06-01 |
 | 2 | ⬜ | 0/3 | — |
 | 3 | ⬜ | 0/3 | — |
 | 4 | ⬜ | 0/2 | — |
@@ -88,7 +86,7 @@ updated: 2026-06-01T20:42:00-04:00
 
 | Phase | Started | Completed | Duration |
 |-------|---------|-----------|----------|
-| 1 | — | — | — |
+| 1 | 2026-06-01 | 2026-06-01 | < 1 dia |
 | 2 | — | — | — |
 | 3 | — | — | — |
 | 4 | — | — | — |
