@@ -137,6 +137,47 @@ function doPost(e) {
       return createJsonResponse({ success: true });
     }
 
+    // Ação: Obter Dados do Mês e Regras Recorrentes
+    if (action === 'getMonthData') {
+      const month = requestData.month; // Formato AAAA-MM
+      if (!month) {
+        return createJsonResponse({ success: false, error: 'Mês não especificado' }, 400);
+      }
+      
+      const recurringSheet = spreadsheet.getSheetByName('Recorrentes');
+      const wesleySheet = spreadsheet.getSheetByName('Despesas [Wesley]');
+      const luanaSheet = spreadsheet.getSheetByName('Despesas [Luana]');
+      
+      // Filtrar regras recorrentes ativas
+      const recurring = getRowsAsObjects(recurringSheet, function(row) {
+        return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
+      });
+      
+      // Filtro para despesas do mês selecionado
+      const filterMonthFn = function(row) {
+        if (!row.Data) return false;
+        let dateStr = "";
+        if (row.Data instanceof Date) {
+          const y = row.Data.getFullYear();
+          const m = String(row.Data.getMonth() + 1).padStart(2, '0');
+          dateStr = y + '-' + m;
+        } else {
+          dateStr = String(row.Data).substring(0, 7);
+        }
+        return dateStr.indexOf(month) === 0;
+      };
+      
+      const wesleyExpenses = getRowsAsObjects(wesleySheet, filterMonthFn);
+      const luanaExpenses = getRowsAsObjects(luanaSheet, filterMonthFn);
+      
+      return createJsonResponse({
+        success: true,
+        recurring: recurring,
+        wesleyExpenses: wesleyExpenses,
+        luanaExpenses: luanaExpenses
+      });
+    }
+
     // Fallback para ações não suportadas ainda nesta fase
     return createJsonResponse({ success: false, error: 'Ação "' + action + '" desconhecida ou não implementada.' }, 400);
     
@@ -170,4 +211,28 @@ function createJsonResponse(data, statusCode) {
   
   return ContentService.createTextOutput(JSON.stringify(data))
                        .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Converte as linhas de uma aba do Sheets em um array de objetos usando o cabeçalho
+ */
+function getRowsAsObjects(sheet, filterFn) {
+  if (!sheet) return [];
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const values = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  
+  const results = [];
+  for (let i = 0; i < values.length; i++) {
+    const rowObj = {};
+    for (let j = 0; j < headers.length; j++) {
+      rowObj[headers[j]] = values[i][j];
+    }
+    if (!filterFn || filterFn(rowObj)) {
+      results.push(rowObj);
+    }
+  }
+  return results;
 }

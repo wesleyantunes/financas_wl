@@ -85,3 +85,19 @@ export async function addRecurringRule(
 ): Promise<any> {
   return await request(url, token, 'addRecurringRule', { rule });
 }
+
+/**
+ * Busca todas as despesas mensais e regras recorrentes consolidadas de um determinado mês YYYY-MM
+ */
+export async function getMonthData(
+  url: string, 
+  token: string, 
+  month: string
+): Promise<{
+  success: boolean;
+  recurring: any[];
+  wesleyExpenses: any[];
+  luanaExpenses: any[];
+}> {
+  return await request(url, token, 'getMonthData', { month });
+}

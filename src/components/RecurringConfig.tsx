@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { addRecurringRule } from '../services/api';
-import { Calendar, PlusCircle, AlertCircle, Sparkles } from 'lucide-react';
+import { PlusCircle, AlertCircle, Sparkles } from 'lucide-react';
 
 interface RecurringConfigProps {
   url: string;
