@@ -4,7 +4,7 @@ version: 1.0.0
 updated: 2026-06-01T20:42:00-04:00
 ---
 
-> **Current Phase:** 3 - Gestão de Despesas Recorrentes (Core Feature 2)
+> **Current Phase:** 4 - Dashboard Dinâmico e Polimento Premium (Polish/Launch)
 > **Status:** executing
 
 ## Must-Haves (from SPEC)
@@ -14,7 +14,7 @@ updated: 2026-06-01T20:42:00-04:00
 - [x] Detecção automática e criação da planilha estruturada com abas Wesley/Luana/Recorrentes.
 - [x] Cadastro rápido de despesas individuais e compartilhadas por tag.
 - [x] Sistema inteligente de parcelamento com gravação de múltiplas linhas futuras.
-- [ ] Painel de controle de despesas recorrentes (água, energia, Netflix) com ajuste no valor real.
+- [x] Painel de controle de despesas recorrentes (água, energia, Netflix) com ajuste no valor real.
 - [ ] Dashboard minimalista premium com gráficos interativos em Recharts (estilo Sicredi Dark).
 
 ---
@@ -47,15 +47,15 @@ updated: 2026-06-01T20:42:00-04:00
 ---
 
 ### Phase 3: Gestão de Despesas Recorrentes (Core Feature 2)
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 **Objective:** Implementar aba de configuração `Recorrentes` e painel de provisão e conciliação de faturas mensais.
 **Depends on:** Phase 2
 **Requirements:** REQ-06, REQ-07
 
 **Plans:**
-- [ ] Plan 3.1: Criar formulário de cadastro de despesas recorrentes (Fixas/Variáveis) salvando na aba `Recorrentes`.
-- [ ] Plan 3.2: Implementar a exibição de pendências de despesas recorrentes do mês corrente no app com estimativas.
-- [ ] Plan 3.3: Desenvolver o fluxo de confirmação rápida que permite ajustar o valor (para contas variáveis como luz/água) e commitar o gasto real na aba do usuário correspondente.
+- [x] Plan 3.1: Criar formulário de cadastro de despesas recorrentes (Fixas/Variáveis) salvando na aba `Recorrentes`.
+- [x] Plan 3.2: Implementar a exibição de pendências de despesas recorrentes do mês corrente no app com estimativas.
+- [x] Plan 3.3: Desenvolver o fluxo de confirmação rápida que permite ajustar o valor (para contas variáveis como luz/água) e commitar o gasto real na aba do usuário correspondente.
 
 ---
 
@@ -77,7 +77,7 @@ updated: 2026-06-01T20:42:00-04:00
 |-------|--------|-------|----------|
 | 1 | ✅ | 3/3 | 2026-06-01 |
 | 2 | ✅ | 3/3 | 2026-06-01 |
-| 3 | ⬜ | 0/3 | — |
+| 3 | ✅ | 3/3 | 2026-06-01 |
 | 4 | ⬜ | 0/2 | — |
 
 ---
@@ -88,5 +88,5 @@ updated: 2026-06-01T20:42:00-04:00
 |-------|---------|-----------|----------|
 | 1 | 2026-06-01 | 2026-06-01 | < 1 dia |
 | 2 | 2026-06-01 | 2026-06-01 | < 1 dia |
-| 3 | — | — | — |
+| 3 | 2026-06-01 | 2026-06-01 | < 1 dia |
 | 4 | — | — | — |

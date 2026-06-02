@@ -20,8 +20,8 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 | REQ-03 | Formulário de lançamento rápido com descrição, valor, data, tags dinâmicas padrão e checkbox "Compartilhado" | SPEC Goal 3 | 2 | Complete |
 | REQ-04 | Envio dos registros para a aba correta no Sheets (`Despesas [Wesley]` ou `Despesas [Luana]`) com base no usuário selecionado | SPEC Goal 3 | 2 | Complete |
 | REQ-05 | Expansão automática de compras parceladas em N linhas futuras com ID de parcelamento único enviadas em lote | SPEC Goal 4 | 2 | Complete |
-| REQ-06 | Lançamento e edição de despesas recorrentes (Fixas/Variáveis) salvando-as na aba `Recorrentes` da planilha | SPEC Goal 5 | 3 | Pending |
-| REQ-07 | Painel de "Contas a Pagar/Pendentes" para visualizar previsões mensais e confirmar/ajustar os valores reais | SPEC Goal 5 | 3 | Pending |
+| REQ-06 | Lançamento e edição de despesas recorrentes (Fixas/Variáveis) salvando-as na aba `Recorrentes` da planilha | SPEC Goal 5 | 3 | Complete |
+| REQ-07 | Painel de "Contas a Pagar/Pendentes" para visualizar previsões mensais e confirmar/ajustar os valores reais | SPEC Goal 5 | 3 | Complete |
 | REQ-08 | Dashboard dinâmico exibindo resumo do mês, divisão por dono da despesa, e gráficos por tags usando Recharts | SPEC Goal 6 | 4 | Pending |
 
 ---
@@ -55,8 +55,8 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 | REQ-03 | Phase 2 Lançamentos | Submit standard expense, verify row insertion | Complete |
 | REQ-04 | Phase 2 Lançamentos | Log as Wesley or Luana, check sheet tabs routing | Complete |
 | REQ-05 | Phase 2 Lançamentos | Submit 3x installment, verify 3 rows added | Complete |
-| REQ-06 | Phase 3 Recorrentes | Save recurring rules in `Recorrentes` tab | — |
-| REQ-07 | Phase 3 Recorrentes | Fetch rules, modify value of variable bill, confirm, check commit to despesas tab | — |
+| REQ-06 | Phase 3 Recorrentes | Save recurring rules in `Recorrentes` tab | Complete |
+| REQ-07 | Phase 3 Recorrentes | Fetch rules, modify value of variable bill, confirm, check commit to despesas tab | Complete |
 | REQ-08 | Phase 4 Dashboard | Load Recharts, verify interactive tooltip and filters | — |
 
 ---
