@@ -33,6 +33,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
   const [confirmDate, setConfirmDate] = useState('');
   const [confirmDescription, setConfirmDescription] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Todos' | 'Wesley' | 'Luana' | 'Compartilhado'>('Todos');
 
   const fetchMonthData = useCallback(async () => {
     setLoading(true);
@@ -154,7 +155,156 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
   }) || [];
 
   const pendingRules = conciliatedRules.filter(r => !r.isPaid);
-  const paidRules = conciliatedRules.filter(r => r.isPaid);
+
+  const rulesWesley = conciliatedRules.filter(r => (r.rule.Dono || r.rule.dono) === 'Wesley');
+  const rulesLuana = conciliatedRules.filter(r => (r.rule.Dono || r.rule.dono) === 'Luana');
+  const rulesShared = conciliatedRules.filter(r => (r.rule.Dono || r.rule.dono) === 'Compartilhado' || !(r.rule.Dono || r.rule.dono));
+
+  const renderCategorySection = (
+    title: string, 
+    rules: typeof conciliatedRules, 
+    emptyMessage: string, 
+    showIfEmpty = false
+  ) => {
+    const pending = rules.filter(r => !r.isPaid);
+    const paid = rules.filter(r => r.isPaid);
+
+    if (rules.length === 0) {
+      if (!showIfEmpty) return null;
+      return (
+        <div className="glass-card" style={{ padding: '20px', textAlign: 'center' }}>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', borderBottom: '1px solid var(--border-glass)', paddingBottom: '8px', color: 'var(--text-title)' }}>
+            {title}
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '20px 0' }}>
+            {emptyMessage}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="glass-card" style={{ padding: '20px' }}>
+        <h3 style={{
+          fontSize: '1.1rem',
+          marginBottom: '16px',
+          borderBottom: '1px solid var(--border-glass)',
+          paddingBottom: '8px',
+          color: 'var(--text-title)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span>{title}</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {pending.length > 0 && (
+              <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '12px', background: 'var(--color-danger-glow)', color: 'var(--color-danger)', fontWeight: 'bold' }}>
+                {pending.length} pendente{pending.length > 1 ? 's' : ''}
+              </span>
+            )}
+            {paid.length > 0 && (
+              <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '12px', background: 'var(--color-primary-glow)', color: 'var(--color-primary)', fontWeight: 'bold' }}>
+                {paid.length} paga{paid.length > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        </h3>
+
+        {/* Pendentes Subsection */}
+        {pending.length > 0 && (
+          <div style={{ marginBottom: paid.length > 0 ? '20px' : '0' }}>
+            <h4 style={{ fontSize: '0.8rem', color: 'var(--color-danger)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Pendentes
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {pending.map(({ rule }) => {
+                const estimatedVal = rule.ValorEstimado || rule['Valor Estimado'] || 0;
+                const dayVal = rule.DiaVencimento || rule['Dia Vencimento'] || 10;
+                const isVar = (rule.Tipo || rule.tipo) === 'Variável';
+
+                return (
+                  <div key={rule.ID || rule.id} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 16px',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-glass)',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ textAlign: 'left' }}>
+                      <strong style={{ display: 'block', color: 'var(--text-title)' }}>{rule.Descrição || rule.desc}</strong>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Vence dia {dayVal} {isVar && <span style={{ color: 'var(--color-warning)' }}>(Variável)</span>}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <strong style={{ color: 'var(--text-title)' }}>
+                        R$ {estimatedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </strong>
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={() => handleOpenConfirm(rule)}
+                        style={{ width: 'auto', padding: '8px 16px', fontSize: '0.85rem' }}
+                      >
+                        Confirmar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Pagas Subsection */}
+        {paid.length > 0 && (
+          <div>
+            <h4 style={{ fontSize: '0.8rem', color: 'var(--color-primary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Pagas
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {paid.map(({ rule, expense }) => {
+                const finalVal = expense ? (parseFloat(String(expense.Valor || expense.valor || 0)) || 0) : 0;
+                const dateValRaw = expense ? (expense.Data || expense.data || '') : '';
+                const dateStr = typeof dateValRaw === 'string' ? dateValRaw : (dateValRaw instanceof Date ? dateValRaw.toISOString() : '');
+                const formattedDate = dateStr ? dateStr.split('T')[0].split('-').reverse().join('/') : 'Data desconhecida';
+
+                return (
+                  <div key={rule.ID || rule.id} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 16px',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-glass)',
+                    borderRadius: '8px',
+                    opacity: 0.8
+                  }}>
+                    <div style={{ textAlign: 'left' }}>
+                      <strong style={{ display: 'block', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                        {rule.Descrição || rule.desc}
+                      </strong>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={12} /> Pago em {formattedDate}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <strong style={{ color: 'var(--color-primary)' }}>
+                        R$ {finalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </strong>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const getMonthName = (monthStr: string) => {
     const [y, m] = monthStr.split('-').map(Number);
@@ -220,6 +370,67 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
         <RecurringConfig url={url} token={token} onRuleAdded={fetchMonthData} />
       ) : (
         <>
+          {/* Tabs switch (shows only when not in settings) */}
+          {!loading && (
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-glass)',
+              borderRadius: '12px',
+              padding: '6px',
+              marginBottom: '8px'
+            }}>
+              {(['Todos', 'Compartilhado', 'Wesley', 'Luana'] as const).map(tab => {
+                const isActive = activeTab === tab;
+                const count = tab === 'Todos'
+                  ? pendingRules.length
+                  : tab === 'Wesley'
+                    ? rulesWesley.filter(r => !r.isPaid).length
+                    : tab === 'Luana'
+                      ? rulesLuana.filter(r => !r.isPaid).length
+                      : rulesShared.filter(r => !r.isPaid).length;
+
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: isActive ? 'var(--color-primary)' : 'transparent',
+                      color: isActive ? 'hsl(140, 10%, 4%)' : 'var(--text-muted)',
+                      fontWeight: isActive ? '700' : '500',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    {tab}
+                    {count > 0 && (
+                      <span style={{
+                        fontSize: '0.75rem',
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        background: isActive ? 'rgba(0, 0, 0, 0.15)' : 'var(--color-danger)',
+                        color: isActive ? 'hsl(140, 10%, 4%)' : '#fff',
+                        fontWeight: 'bold'
+                      }}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* loading state */}
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -228,113 +439,33 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              
-              {/* List of Pending Bills */}
-              <div className="glass-card" style={{ padding: '20px' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', borderBottom: '1px solid var(--border-glass)', paddingBottom: '8px', color: 'var(--color-danger)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Contas Pendentes</span>
-                  <span style={{ fontSize: '0.9rem', padding: '2px 8px', borderRadius: '12px', background: 'var(--color-danger-glow)', fontWeight: 'bold' }}>{pendingRules.length}</span>
-                </h3>
-
-                {pendingRules.length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '20px 0' }}>
-                    Tudo pago! Nenhuma conta pendente para este mês.
+              {activeTab === 'Todos' && conciliatedRules.length === 0 && (
+                <div className="glass-card" style={{ padding: '40px 20px', textAlign: 'center' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                    Nenhuma conta recorrente cadastrada para este mês.
                   </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {pendingRules.map(({ rule }) => {
-                      const estimatedVal = rule.ValorEstimado || rule['Valor Estimado'] || 0;
-                      const dayVal = rule.DiaVencimento || rule['Dia Vencimento'] || 10;
-                      const ownerVal = rule.Dono || rule.dono || 'Compartilhado';
-                      const isVar = (rule.Tipo || rule.tipo) === 'Variável';
+                </div>
+              )}
 
-                      return (
-                        <div key={rule.ID || rule.id} style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '12px 16px',
-                          background: 'var(--bg-secondary)',
-                          border: '1px solid var(--border-glass)',
-                          borderRadius: '8px'
-                        }}>
-                          <div style={{ textAlign: 'left' }}>
-                            <strong style={{ display: 'block', color: 'var(--text-title)' }}>{rule.Descrição || rule.desc}</strong>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                              Vence dia {dayVal} • {ownerVal} {isVar && <span style={{ color: 'var(--color-warning)' }}>(Variável)</span>}
-                            </span>
-                          </div>
+              {activeTab === 'Todos' && (
+                <>
+                  {renderCategorySection('Contas Compartilhadas', rulesShared, 'Nenhuma conta compartilhada registrada.')}
+                  {renderCategorySection('Contas de Wesley', rulesWesley, 'Nenhuma conta de Wesley registrada.')}
+                  {renderCategorySection('Contas de Luana', rulesLuana, 'Nenhuma conta de Luana registrada.')}
+                </>
+              )}
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <strong style={{ color: 'var(--text-title)' }}>
-                              R$ {estimatedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </strong>
-                            <button 
-                              className="btn btn-primary" 
-                              onClick={() => handleOpenConfirm(rule)}
-                              style={{ width: 'auto', padding: '8px 16px', fontSize: '0.85rem' }}
-                            >
-                              Confirmar
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              {activeTab === 'Compartilhado' && (
+                renderCategorySection('Contas Compartilhadas', rulesShared, 'Nenhuma conta compartilhada registrada.', true)
+              )}
 
-              {/* List of Paid Bills */}
-              <div className="glass-card" style={{ padding: '20px' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', borderBottom: '1px solid var(--border-glass)', paddingBottom: '8px', color: 'var(--color-primary)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Contas Pagas</span>
-                  <span style={{ fontSize: '0.9rem', padding: '2px 8px', borderRadius: '12px', background: 'var(--color-primary-glow)', fontWeight: 'bold' }}>{paidRules.length}</span>
-                </h3>
+              {activeTab === 'Wesley' && (
+                renderCategorySection('Contas de Wesley', rulesWesley, 'Nenhuma conta de Wesley registrada.', true)
+              )}
 
-                {paidRules.length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '20px 0' }}>
-                    Nenhum pagamento registrado neste mês ainda.
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {paidRules.map(({ rule, expense }) => {
-                      const finalVal = expense ? (parseFloat(String(expense.Valor || expense.valor || 0)) || 0) : 0;
-                      const dateValRaw = expense ? (expense.Data || expense.data || '') : '';
-                      const dateStr = typeof dateValRaw === 'string' ? dateValRaw : (dateValRaw instanceof Date ? dateValRaw.toISOString() : '');
-                      const formattedDate = dateStr ? dateStr.split('T')[0].split('-').reverse().join('/') : 'Data desconhecida';
-
-                      return (
-                        <div key={rule.ID || rule.id} style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '12px 16px',
-                          background: 'var(--bg-secondary)',
-                          border: '1px solid var(--border-glass)',
-                          borderRadius: '8px',
-                          opacity: 0.8
-                        }}>
-                          <div style={{ textAlign: 'left' }}>
-                            <strong style={{ display: 'block', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                              {rule.Descrição || rule.desc}
-                            </strong>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Check size={12} /> Pago em {formattedDate}
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <strong style={{ color: 'var(--color-primary)' }}>
-                              R$ {finalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </strong>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
+              {activeTab === 'Luana' && (
+                renderCategorySection('Contas de Luana', rulesLuana, 'Nenhuma conta de Luana registrada.', true)
+              )}
             </div>
           )}
         </>

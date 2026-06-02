@@ -178,6 +178,202 @@ function doPost(e) {
       });
     }
 
+    // Ação: Excluir Despesa por ID
+    if (action === 'deleteExpense') {
+      const tabName = requestData.tabName;
+      const id = requestData.id;
+      
+      if (!tabName || !id) {
+        return createJsonResponse({ success: false, error: 'Aba ou ID não especificados' }, 400);
+      }
+      
+      const sheet = spreadsheet.getSheetByName(tabName);
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "' + tabName + '" não encontrada' }, 404);
+      }
+      
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        return createJsonResponse({ success: false, error: 'Tabela vazia' }, 400);
+      }
+      
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      let deleted = false;
+      
+      // Percorre de baixo para cima para evitar problemas de deslocamento de linha
+      for (let i = ids.length - 1; i >= 0; i--) {
+        if (String(ids[i][0]) === String(id)) {
+          sheet.deleteRow(i + 2);
+          deleted = true;
+        }
+      }
+      
+      return createJsonResponse({ success: true, deleted: deleted });
+    }
+
+    // Ação: Editar/Atualizar Despesa por ID
+    if (action === 'updateExpense') {
+      const tabName = requestData.tabName;
+      const id = requestData.id;
+      const expense = requestData.expense; // Array de novos valores
+      
+      if (!tabName || !id || !expense || !expense.length) {
+        return createJsonResponse({ success: false, error: 'Aba, ID ou dados da despesa não especificados' }, 400);
+      }
+      
+      const sheet = spreadsheet.getSheetByName(tabName);
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "' + tabName + '" não encontrada' }, 404);
+      }
+      
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        return createJsonResponse({ success: false, error: 'Tabela vazia' }, 400);
+      }
+      
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      let updated = false;
+      
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === String(id)) {
+          sheet.getRange(i + 2, 1, 1, expense.length).setValues([expense]);
+          updated = true;
+          break;
+        }
+      }
+      
+      return createJsonResponse({ success: true, updated: updated });
+    }
+
+    // Ação: Excluir Parcelas Futuras em Lote
+    if (action === 'deleteInstallments') {
+      const tabName = requestData.tabName;
+      const installmentGroupId = requestData.installmentGroupId;
+      const baseDateStr = requestData.baseDate; // YYYY-MM-DD
+      
+      if (!tabName || !installmentGroupId || !baseDateStr) {
+        return createJsonResponse({ success: false, error: 'Aba, ID de parcelamento ou data base não especificados' }, 400);
+      }
+      
+      const sheet = spreadsheet.getSheetByName(tabName);
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "' + tabName + '" não encontrada' }, 404);
+      }
+      
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        return createJsonResponse({ success: true, deletedCount: 0 });
+      }
+      
+      const dataRange = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+      let deletedCount = 0;
+      
+      // Parse data localmente ignorando fuso horário
+      const baseParts = baseDateStr.split('-');
+      const baseYear = parseInt(baseParts[0], 10);
+      const baseMonth = parseInt(baseParts[1], 10) - 1;
+      const baseDay = parseInt(baseParts[2], 10);
+      const baseDate = new Date(baseYear, baseMonth, baseDay);
+      
+      for (let i = dataRange.length - 1; i >= 0; i--) {
+        const rowIdParcelamento = String(dataRange[i][6]);
+        if (rowIdParcelamento === String(installmentGroupId)) {
+          const rowDateStr = String(dataRange[i][1]);
+          // Se for objeto data ou string
+          let rowDate;
+          if (rowDateStr.indexOf('T') !== -1) {
+            const parts = rowDateStr.split('T')[0].split('-');
+            rowDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          } else {
+            const parts = rowDateStr.split('-');
+            rowDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          }
+          
+          if (!isNaN(rowDate.getTime()) && rowDate.getTime() >= baseDate.getTime()) {
+            sheet.deleteRow(i + 2);
+            deletedCount++;
+          }
+        }
+      }
+      
+      return createJsonResponse({ success: true, deletedCount: deletedCount });
+    }
+
+    // Ação: Editar/Atualizar Parcelas Futuras em Lote
+    if (action === 'updateInstallments') {
+      const tabName = requestData.tabName;
+      const installmentGroupId = requestData.installmentGroupId;
+      const baseDateStr = requestData.baseDate; // YYYY-MM-DD
+      const updatedFields = requestData.updatedFields; // Objeto com campos editados: { Descrição, Valor, Tag, Compartilhado }
+      
+      if (!tabName || !installmentGroupId || !baseDateStr || !updatedFields) {
+        return createJsonResponse({ success: false, error: 'Aba, ID de parcelamento, data base ou campos a atualizar não especificados' }, 400);
+      }
+      
+      const sheet = spreadsheet.getSheetByName(tabName);
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "' + tabName + '" não encontrada' }, 404);
+      }
+      
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        return createJsonResponse({ success: true, updatedCount: 0 });
+      }
+      
+      const range = sheet.getRange(2, 1, lastRow - 1, 7);
+      const values = range.getValues();
+      let updatedCount = 0;
+      
+      const baseParts = baseDateStr.split('-');
+      const baseYear = parseInt(baseParts[0], 10);
+      const baseMonth = parseInt(baseParts[1], 10) - 1;
+      const baseDay = parseInt(baseParts[2], 10);
+      const baseDate = new Date(baseYear, baseMonth, baseDay);
+      
+      for (let i = 0; i < values.length; i++) {
+        const rowIdParcelamento = String(values[i][6]);
+        if (rowIdParcelamento === String(installmentGroupId)) {
+          const rowDateStr = String(values[i][1]);
+          let rowDate;
+          if (rowDateStr.indexOf('T') !== -1) {
+            const parts = rowDateStr.split('T')[0].split('-');
+            rowDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          } else {
+            const parts = rowDateStr.split('-');
+            rowDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          }
+          
+          if (!isNaN(rowDate.getTime()) && rowDate.getTime() >= baseDate.getTime()) {
+            if (updatedFields.Descrição !== undefined) {
+              const oldDesc = String(values[i][2]);
+              const match = oldDesc.match(/\((\d{2}\/\d{2})\)$/);
+              if (match) {
+                values[i][2] = updatedFields.Descrição + ' (' + match[1] + ')';
+              } else {
+                values[i][2] = updatedFields.Descrição;
+              }
+            }
+            if (updatedFields.Valor !== undefined) {
+              values[i][3] = Number(updatedFields.Valor);
+            }
+            if (updatedFields.Tag !== undefined) {
+              values[i][4] = updatedFields.Tag;
+            }
+            if (updatedFields.Compartilhado !== undefined) {
+              values[i][5] = updatedFields.Compartilhado;
+            }
+            updatedCount++;
+          }
+        }
+      }
+      
+      if (updatedCount > 0) {
+        range.setValues(values);
+      }
+      
+      return createJsonResponse({ success: true, updatedCount: updatedCount });
+    }
+
     // Fallback para ações não suportadas ainda nesta fase
     return createJsonResponse({ success: false, error: 'Ação "' + action + '" desconhecida ou não implementada.' }, 400);
     

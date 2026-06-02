@@ -142,3 +142,60 @@ export async function getMonthData(
     luanaExpenses: RawExpense[];
   }>(url, token, 'getMonthData', { month });
 }
+
+/**
+ * Exclui uma despesa pelo ID na aba correspondente
+ */
+export async function deleteExpense(
+  url: string, 
+  token: string, 
+  tabName: string, 
+  id: string
+): Promise<unknown> {
+  return await request(url, token, 'deleteExpense', { tabName, id });
+}
+
+/**
+ * Atualiza os valores de uma despesa pelo ID na aba correspondente
+ */
+export async function updateExpense(
+  url: string, 
+  token: string, 
+  tabName: string, 
+  id: string,
+  expense: unknown[]
+): Promise<unknown> {
+  return await request(url, token, 'updateExpense', { tabName, id, expense });
+}
+
+/**
+ * Exclui em lote parcelas futuras vinculadas a um ID de parcelamento a partir de uma data base
+ */
+export async function deleteInstallments(
+  url: string,
+  token: string,
+  tabName: string,
+  installmentGroupId: string,
+  baseDate: string
+): Promise<unknown> {
+  return await request(url, token, 'deleteInstallments', { tabName, installmentGroupId, baseDate });
+}
+
+/**
+ * Atualiza em lote campos de parcelas futuras vinculadas a um ID de parcelamento a partir de uma data base
+ */
+export async function updateInstallments(
+  url: string,
+  token: string,
+  tabName: string,
+  installmentGroupId: string,
+  baseDate: string,
+  updatedFields: {
+    Descrição?: string;
+    Valor?: number;
+    Tag?: string;
+    Compartilhado?: boolean;
+  }
+): Promise<unknown> {
+  return await request(url, token, 'updateInstallments', { tabName, installmentGroupId, baseDate, updatedFields });
+}

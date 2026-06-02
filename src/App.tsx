@@ -3,8 +3,9 @@ import { SetupScreen } from './components/SetupScreen';
 import { ExpenseForm } from './components/ExpenseForm';
 import { RecurringPanel } from './components/RecurringPanel';
 import { Dashboard } from './components/Dashboard';
+import { HistoryPanel } from './components/HistoryPanel';
 import { testConnection, initializeSpreadsheet } from './services/api';
-import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar } from 'lucide-react';
+import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History } from 'lucide-react';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -22,20 +23,20 @@ function App() {
     const savedUser = localStorage.getItem('finance_active_user');
     return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'recurring'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'recurring' | 'history'>('dashboard');
 
   const handleConnect = async (url: string, token: string) => {
     // 1. Testa a conexão (Ping)
     await testConnection(url, token);
-    
+
     // 2. Garante a inicialização das abas na planilha
     await initializeSpreadsheet(url, token);
-    
+
     // 3. Salva no localStorage em caso de sucesso
     localStorage.setItem('finance_app_url', url);
     localStorage.setItem('finance_secret_token', token);
     localStorage.setItem('finance_active_user', currentUser);
-    
+
     setAppUrl(url);
     setSecretToken(token);
     setIsAuthenticated(true);
@@ -65,9 +66,9 @@ function App() {
         <div className="nav-container">
           <div className="logo-text">
             <Wallet size={24} />
-            <span>Finanças</span>Compartilhadas
+            <span>Finanças</span> WL
           </div>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* User Toggle Switch */}
             <div style={{
@@ -77,7 +78,7 @@ function App() {
               padding: '2px',
               border: '1px solid var(--border-glass)'
             }}>
-              <button 
+              <button
                 onClick={() => handleUserToggle('Wesley')}
                 style={{
                   background: currentUser === 'Wesley' ? 'var(--color-primary)' : 'transparent',
@@ -93,7 +94,7 @@ function App() {
               >
                 Wesley
               </button>
-              <button 
+              <button
                 onClick={() => handleUserToggle('Luana')}
                 style={{
                   background: currentUser === 'Luana' ? 'var(--color-primary)' : 'transparent',
@@ -112,7 +113,7 @@ function App() {
             </div>
 
             {/* Logout Button */}
-            <button 
+            <button
               onClick={handleLogout}
               style={{
                 background: 'transparent',
@@ -140,25 +141,33 @@ function App() {
       {/* Main Content Area */}
       <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {activeTab === 'dashboard' && (
-          <Dashboard 
-            url={appUrl} 
-            token={secretToken} 
+          <Dashboard
+            url={appUrl}
+            token={secretToken}
           />
         )}
 
         {activeTab === 'new-expense' && (
-          <ExpenseForm 
-            url={appUrl} 
-            token={secretToken} 
-            currentUser={currentUser} 
+          <ExpenseForm
+            url={appUrl}
+            token={secretToken}
+            currentUser={currentUser}
           />
         )}
 
         {activeTab === 'recurring' && (
-          <RecurringPanel 
-            url={appUrl} 
-            token={secretToken} 
-            currentUser={currentUser} 
+          <RecurringPanel
+            url={appUrl}
+            token={secretToken}
+            currentUser={currentUser}
+          />
+        )}
+
+        {activeTab === 'history' && (
+          <HistoryPanel
+            url={appUrl}
+            token={secretToken}
+            currentUser={currentUser}
           />
         )}
       </main>
@@ -180,7 +189,7 @@ function App() {
           margin: '0 auto',
           padding: '0 16px'
         }}>
-          <button 
+          <button
             onClick={() => setActiveTab('dashboard')}
             style={{
               background: 'transparent',
@@ -200,7 +209,7 @@ function App() {
             Dashboard
           </button>
 
-          <button 
+          <button
             onClick={() => setActiveTab('new-expense')}
             style={{
               background: 'transparent',
@@ -220,7 +229,7 @@ function App() {
             Lançar
           </button>
 
-          <button 
+          <button
             onClick={() => setActiveTab('recurring')}
             style={{
               background: 'transparent',
@@ -238,6 +247,26 @@ function App() {
           >
             <Calendar size={20} />
             Recorrentes
+          </button>
+
+          <button
+            onClick={() => setActiveTab('history')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'history' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'history' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <History size={20} />
+            Histórico
           </button>
         </div>
       </div>
