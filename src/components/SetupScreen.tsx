@@ -56,7 +56,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({ onConnect }) => {
           <Wallet size={36} />
         </div>
         <h1 style={{ fontSize: '2rem', marginBottom: '8px', letterSpacing: '-0.5px' }}>
-          Finanças<span>Compartilhadas</span>
+          Finanças<span> WL</span>
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '28px' }}>
           Gerencie o orçamento familiar de forma privada e segura usando o Google Sheets como banco de dados.
@@ -185,7 +185,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({ onConnect }) => {
               <CheckCircle2 size={16} />
               Configuração Passo a Passo
             </h3>
-            
+
             <ol style={{ paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-main)' }}>
               <li>
                 Crie uma planilha vazia no seu <strong>Google Sheets</strong>.
@@ -194,7 +194,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({ onConnect }) => {
                 No menu superior, vá em <strong>Extensões</strong> ➔ <strong>Apps Script</strong>.
               </li>
               <li>
-                Apague todo o código que estiver lá e cole o conteúdo do arquivo de script localizado em 
+                Apague todo o código que estiver lá e cole o conteúdo do arquivo de script localizado em
                 <code style={{ background: 'var(--bg-tertiary)', color: 'var(--text-title)', padding: '2px 4px', borderRadius: '4px', display: 'inline-block', marginTop: '4px', fontFamily: 'monospace' }}>
                   scripts/google-apps-script.js
                 </code> no repositório do projeto.
