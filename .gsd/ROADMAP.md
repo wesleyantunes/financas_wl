@@ -4,7 +4,7 @@ version: 1.0.0
 updated: 2026-06-01T20:42:00-04:00
 ---
 
-> **Current Phase:** 2 - Lançamento de Despesas e Parcelamentos (Core Feature 1)
+> **Current Phase:** 3 - Gestão de Despesas Recorrentes (Core Feature 2)
 > **Status:** executing
 
 ## Must-Haves (from SPEC)
@@ -12,8 +12,8 @@ updated: 2026-06-01T20:42:00-04:00
 - [x] Tela de Configuração inicial do Web App URL e Token Secreto do Google Apps Script.
 - [x] Script Google Apps Script robusto pronto para manipulação e inicialização da planilha.
 - [x] Detecção automática e criação da planilha estruturada com abas Wesley/Luana/Recorrentes.
-- [ ] Cadastro rápido de despesas individuais e compartilhadas por tag.
-- [ ] Sistema inteligente de parcelamento com gravação de múltiplas linhas futuras.
+- [x] Cadastro rápido de despesas individuais e compartilhadas por tag.
+- [x] Sistema inteligente de parcelamento com gravação de múltiplas linhas futuras.
 - [ ] Painel de controle de despesas recorrentes (água, energia, Netflix) com ajuste no valor real.
 - [ ] Dashboard minimalista premium com gráficos interativos em Recharts (estilo Sicredi Dark).
 
@@ -34,15 +34,15 @@ updated: 2026-06-01T20:42:00-04:00
 ---
 
 ### Phase 2: Lançamento de Despesas e Parcelamentos (Core Feature 1)
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 **Objective:** Criar o formulário de despesas e implementar a expansão de compras parceladas em linhas futuras da planilha.
 **Depends on:** Phase 1
 **Requirements:** REQ-03, REQ-04, REQ-05, NFR-02
 
 **Plans:**
-- [ ] Plan 2.1: Desenvolver a interface do formulário de lançamento (Mobile-First, Sicredi Dark glassmorphic UI) e lógica de tags rápidas padrões.
-- [ ] Plan 2.2: Implementar a lógica de gravação para a respectiva aba (`Despesas [Wesley]` ou `Despesas [Luana]`) e tratamento de marcação compartilhada.
-- [ ] Plan 2.3: Desenvolver algoritmo de parcelamento (geração e inserção em lote de N parcelas com IDs vinculados).
+- [x] Plan 2.1: Desenvolver a interface do formulário de lançamento (Mobile-First, Sicredi Dark glassmorphic UI) e lógica de tags rápidas padrões.
+- [x] Plan 2.2: Implementar a lógica de gravação para a respectiva aba (`Despesas [Wesley]` ou `Despesas [Luana]`) e tratamento de marcação compartilhada.
+- [x] Plan 2.3: Desenvolver algoritmo de parcelamento (geração e inserção em lote de N parcelas com IDs vinculados).
 
 ---
 
@@ -76,7 +76,7 @@ updated: 2026-06-01T20:42:00-04:00
 | Phase | Status | Plans | Complete |
 |-------|--------|-------|----------|
 | 1 | ✅ | 3/3 | 2026-06-01 |
-| 2 | ⬜ | 0/3 | — |
+| 2 | ✅ | 3/3 | 2026-06-01 |
 | 3 | ⬜ | 0/3 | — |
 | 4 | ⬜ | 0/2 | — |
 
@@ -87,6 +87,6 @@ updated: 2026-06-01T20:42:00-04:00
 | Phase | Started | Completed | Duration |
 |-------|---------|-----------|----------|
 | 1 | 2026-06-01 | 2026-06-01 | < 1 dia |
-| 2 | — | — | — |
+| 2 | 2026-06-01 | 2026-06-01 | < 1 dia |
 | 3 | — | — | — |
 | 4 | — | — | — |

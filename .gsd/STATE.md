@@ -7,17 +7,18 @@ updated: 2026-06-01T20:44:00-04:00
 ## Current Position
 
 **Milestone:** v1.0
-**Phase:** 2 - Lançamento de Despesas e Parcelamentos (Core Feature 1)
-**Status:** Ready for execution
+**Phase:** 2 (completed)
+**Task:** All tasks complete
+**Status:** Verified
 **Plan:** —
 
 ## Last Action
 
-Planejamento da Fase 2 finalizado. Criados os planos 2.1, 2.2 e 2.3 para o formulário de lançamento, algoritmo de parcelamento e integração com a API do Apps Script.
+Fase 2 executada e verificada com sucesso. Desenvolvidos o formulário ExpenseForm.tsx, a lógica de parcelamento (geração de parcelas futuras no cliente) e a rota de escrita em lote (addExpenses) no google-apps-script.js.
 
 ## Next Steps
 
-1. `/execute 2` — Iniciar a execução das tarefas da Fase 2.
+1. `/plan 3` — Criar os planos de execução para a Fase 3 (Gestão de Despesas Recorrentes).
 
 ## Active Decisions
 
