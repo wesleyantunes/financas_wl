@@ -54,7 +54,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
     setSubmitting(true);
 
     try {
-      const generatedExpenses: any[][] = [];
+      const generatedExpenses: unknown[][] = [];
       const baseDate = new Date(date + 'T00:00:00'); // Carrega em Hora Local do Navegador
 
       const formatLocalDate = (d: Date): string => {
@@ -67,15 +67,15 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
       if (isInstallment) {
         const installmentValue = parseFloat((parsedValue / parsedInstallments).toFixed(2));
         const installmentGroupId = `inst_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        
+
         for (let i = 0; i < parsedInstallments; i++) {
           const targetDate = new Date(baseDate);
           targetDate.setMonth(baseDate.getMonth() + i);
-          
+
           const formattedDate = formatLocalDate(targetDate);
           const id = `tx_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`;
           const desc = `${description} (${String(i + 1).padStart(2, '0')}/${String(parsedInstallments).padStart(2, '0')})`;
-          
+
           generatedExpenses.push([
             id,
             formattedDate,
@@ -104,7 +104,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
 
       // Feedback de Sucesso
       setToastMessage(isInstallment ? `${parsedInstallments} parcelas gravadas com sucesso!` : 'Despesa cadastrada com sucesso!');
-      
+
       // Limpeza do formulário
       setDescription('');
       setValue('');
@@ -118,8 +118,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
         setToastMessage('');
       }, 3000);
 
-    } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao enviar a despesa.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ocorreu um erro ao enviar a despesa.');
     } finally {
       setSubmitting(false);
     }
@@ -127,7 +127,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
 
   return (
     <div style={{ position: 'relative', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
-      
+
       {/* Toast Alert */}
       {toastMessage && (
         <div style={{
@@ -181,7 +181,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          
+
           {/* Descrição */}
           <div className="form-group">
             <label className="form-label" htmlFor="expense-desc">
@@ -192,7 +192,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
               id="expense-desc"
               type="text"
               className="form-control"
-              placeholder="Ex: Supermercado Sicredi, Combustível, Aluguel"
+              placeholder="Ex: Supermercado, Combustível, Aluguel"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={submitting}
@@ -256,9 +256,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
           </div>
 
           {/* Toggles (Compartilhado & Parcelado) */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr 1fr', 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
             gap: '12px',
             backgroundColor: 'var(--bg-secondary)',
             padding: '14px',
@@ -266,10 +266,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
             border: '1px solid var(--border-glass)'
           }}>
             {/* Compartilhado */}
-            <label style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '10px', 
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
               cursor: 'pointer',
               fontSize: '0.9rem',
               fontWeight: '500'
@@ -279,11 +279,11 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
                 checked={isShared}
                 onChange={(e) => setIsShared(e.target.checked)}
                 disabled={submitting}
-                style={{ 
-                  width: '16px', 
-                  height: '16px', 
+                style={{
+                  width: '16px',
+                  height: '16px',
                   accentColor: 'var(--color-primary)',
-                  cursor: 'pointer' 
+                  cursor: 'pointer'
                 }}
               />
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -293,10 +293,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
             </label>
 
             {/* Parcelado */}
-            <label style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '10px', 
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
               cursor: 'pointer',
               fontSize: '0.9rem',
               fontWeight: '500'
@@ -306,11 +306,11 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
                 checked={isInstallment}
                 onChange={(e) => setIsInstallment(e.target.checked)}
                 disabled={submitting}
-                style={{ 
-                  width: '16px', 
-                  height: '16px', 
+                style={{
+                  width: '16px',
+                  height: '16px',
                   accentColor: 'var(--color-primary)',
-                  cursor: 'pointer' 
+                  cursor: 'pointer'
                 }}
               />
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

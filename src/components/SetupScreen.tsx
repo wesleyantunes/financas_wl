@@ -29,8 +29,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({ onConnect }) => {
 
     try {
       await onConnect(url.trim(), token.trim());
-    } catch (err: any) {
-      setError(err.message || 'Falha ao conectar com o script. Verifique a URL e a Senha.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao conectar com o script. Verifique a URL e a Senha.');
     } finally {
       setLoading(false);
     }

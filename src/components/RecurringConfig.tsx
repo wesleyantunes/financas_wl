@@ -72,8 +72,8 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
         setSuccess(false);
       }, 3000);
 
-    } catch (err: any) {
-      setError(err.message || 'Erro ao cadastrar a regra recorrente.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao cadastrar a regra recorrente.');
     } finally {
       setSubmitting(false);
     }

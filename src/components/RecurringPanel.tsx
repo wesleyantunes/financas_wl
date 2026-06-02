@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getMonthData, addExpenses } from '../services/api';
+import type { RawExpense, RawRecurringRule } from '../services/api';
 import { RecurringConfig } from './RecurringConfig';
 import { Calendar, Check, AlertCircle, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 
@@ -20,35 +21,46 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState<{
-    recurring: any[];
-    wesleyExpenses: any[];
-    luanaExpenses: any[];
+    recurring: RawRecurringRule[];
+    wesleyExpenses: RawExpense[];
+    luanaExpenses: RawExpense[];
   } | null>(null);
 
   // Modal and Config form toggles
   const [showConfig, setShowConfig] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState<any>(null); // holds rule object when open
+  const [showConfirmModal, setShowConfirmModal] = useState<RawRecurringRule | null>(null); // holds rule object when open
   const [confirmValue, setConfirmValue] = useState('');
   const [confirmDate, setConfirmDate] = useState('');
   const [confirmDescription, setConfirmDescription] = useState('');
   const [confirming, setConfirming] = useState(false);
 
-  const fetchMonthData = async () => {
+  const fetchMonthData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const res = await getMonthData(url, token, selectedMonth);
       setData(res);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar dados consolidados.');
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Erro ao carregar dados consolidados.';
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
-  };
+  }, [url, token, selectedMonth]);
 
   useEffect(() => {
-    fetchMonthData();
-  }, [selectedMonth]);
+    let active = true;
+    const run = async () => {
+      await Promise.resolve();
+      if (active) {
+        fetchMonthData();
+      }
+    };
+    run();
+    return () => {
+      active = false;
+    };
+  }, [fetchMonthData]);
 
   const handlePrevMonth = () => {
     const [y, m] = selectedMonth.split('-').map(Number);
@@ -66,7 +78,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
     setSelectedMonth(`${ny}-${nm}`);
   };
 
-  const handleOpenConfirm = (rule: any) => {
+  const handleOpenConfirm = (rule: RawRecurringRule) => {
     const [year, monthStr] = selectedMonth.split('-');
     const dayStr = String(rule.DiaVencimento || rule['Dia Vencimento'] || 10).padStart(2, '0');
     
@@ -112,8 +124,8 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
       setShowConfirmModal(null);
       await fetchMonthData();
 
-    } catch (err: any) {
-      alert(err.message || 'Erro ao confirmar pagamento.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao confirmar pagamento.');
     } finally {
       setConfirming(false);
     }
@@ -210,9 +222,9 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
         <>
           {/* loading state */}
           {loading ? (
-            <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <span className="shimmer" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'inline-block', marginBottom: '16px' }}></span>
-              <p style={{ color: 'var(--text-muted)' }}>Sincronizando planilha...</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="glass-card shimmer" style={{ height: '180px', borderRadius: '16px' }}></div>
+              <div className="glass-card shimmer" style={{ height: '180px', borderRadius: '16px' }}></div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -286,8 +298,10 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {paidRules.map(({ rule, expense }) => {
-                      const finalVal = expense.Valor || expense.valor || 0;
-                      const dateVal = expense.Data || expense.data || '';
+                      const finalVal = expense ? (parseFloat(String(expense.Valor || expense.valor || 0)) || 0) : 0;
+                      const dateValRaw = expense ? (expense.Data || expense.data || '') : '';
+                      const dateStr = typeof dateValRaw === 'string' ? dateValRaw : (dateValRaw instanceof Date ? dateValRaw.toISOString() : '');
+                      const formattedDate = dateStr ? dateStr.split('T')[0].split('-').reverse().join('/') : 'Data desconhecida';
 
                       return (
                         <div key={rule.ID || rule.id} style={{
@@ -305,7 +319,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
                               {rule.Descrição || rule.desc}
                             </strong>
                             <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Check size={12} /> Pago em {dateVal.split('-').reverse().join('/')}
+                              <Check size={12} /> Pago em {formattedDate}
                             </span>
                           </div>
 

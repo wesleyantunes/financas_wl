@@ -1,19 +1,53 @@
+export interface RawExpense {
+  ID?: string;
+  id?: string;
+  Data?: string | Date;
+  data?: string | Date;
+  Descrição?: string;
+  desc?: string;
+  Valor?: string | number;
+  valor?: string | number;
+  Tag?: string;
+  tag?: string;
+  Compartilhado?: boolean | string;
+  ['ID Parcelamento']?: string;
+}
+
+export interface RawRecurringRule {
+  ID?: string;
+  id?: string;
+  Descrição?: string;
+  desc?: string;
+  ValorEstimado?: string | number;
+  ['Valor Estimado']?: string | number;
+  ['valor estimado']?: string | number;
+  DiaVencimento?: string | number;
+  ['Dia Vencimento']?: string | number;
+  ['dia vencimento']?: string | number;
+  Tipo?: string;
+  tipo?: string;
+  Dono?: string;
+  dono?: string;
+  Ativo?: boolean | string | number;
+  ativo?: boolean | string | number;
+}
+
 interface ApiRequestPayload {
   token: string;
   action: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
  * Função genérica para realizar chamadas para a API do Google Apps Script
  * Utiliza POST e envia o corpo como texto plano para evitar requisições pré-vias do CORS (preflight OPTIONS)
  */
-export async function request(
+export async function request<T = unknown>(
   url: string, 
   token: string, 
   action: string, 
-  args: Record<string, any> = {}
-): Promise<any> {
+  args: Record<string, unknown> = {}
+): Promise<T> {
   try {
     const payload: ApiRequestPayload = {
       token,
@@ -34,17 +68,19 @@ export async function request(
       throw new Error(`Erro na conexão com o Google Sheets: HTTP ${response.status}`);
     }
     
-    const data = await response.json();
+    const data = await response.json() as T;
     
     // Se o script retornou erro explicitamente
-    if (data && data.success === false) {
-      throw new Error(data.error || 'Ocorreu um erro no processamento da planilha.');
+    const dataObj = data as Record<string, unknown> | null;
+    if (dataObj && dataObj.success === false) {
+      throw new Error(String(dataObj.error) || 'Ocorreu um erro no processamento da planilha.');
     }
     
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Erro de API na ação "${action}":`, error);
-    throw new Error(error.message || 'Não foi possível estabelecer contato com a planilha.');
+    const err = error instanceof Error ? error : new Error('Erro desconhecido');
+    throw new Error(err.message || 'Não foi possível estabelecer contato com a planilha.', { cause: error });
   }
 }
 
@@ -52,14 +88,14 @@ export async function request(
  * Realiza uma requisição simples de "ping" para validar se a URL e a senha estão corretas
  */
 export async function testConnection(url: string, token: string): Promise<boolean> {
-  const result = await request(url, token, 'ping');
+  const result = await request<{ success: boolean }>(url, token, 'ping');
   return result && result.success === true;
 }
 
 /**
  * Aciona a inicialização das abas necessárias da planilha (Wesley, Luana e Recorrentes)
  */
-export async function initializeSpreadsheet(url: string, token: string): Promise<any> {
+export async function initializeSpreadsheet(url: string, token: string): Promise<unknown> {
   return await request(url, token, 'initialize');
 }
 
@@ -70,8 +106,8 @@ export async function addExpenses(
   url: string, 
   token: string, 
   tabName: string, 
-  expenses: any[][]
-): Promise<any> {
+  expenses: unknown[][]
+): Promise<unknown> {
   return await request(url, token, 'addExpenses', { tabName, expenses });
 }
 
@@ -81,8 +117,8 @@ export async function addExpenses(
 export async function addRecurringRule(
   url: string, 
   token: string, 
-  rule: any[]
-): Promise<any> {
+  rule: unknown[]
+): Promise<unknown> {
   return await request(url, token, 'addRecurringRule', { rule });
 }
 
@@ -95,9 +131,14 @@ export async function getMonthData(
   month: string
 ): Promise<{
   success: boolean;
-  recurring: any[];
-  wesleyExpenses: any[];
-  luanaExpenses: any[];
+  recurring: RawRecurringRule[];
+  wesleyExpenses: RawExpense[];
+  luanaExpenses: RawExpense[];
 }> {
-  return await request(url, token, 'getMonthData', { month });
+  return await request<{
+    success: boolean;
+    recurring: RawRecurringRule[];
+    wesleyExpenses: RawExpense[];
+    luanaExpenses: RawExpense[];
+  }>(url, token, 'getMonthData', { month });
 }

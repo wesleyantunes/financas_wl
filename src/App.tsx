@@ -1,32 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SetupScreen } from './components/SetupScreen';
 import { ExpenseForm } from './components/ExpenseForm';
 import { RecurringPanel } from './components/RecurringPanel';
+import { Dashboard } from './components/Dashboard';
 import { testConnection, initializeSpreadsheet } from './services/api';
 import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar } from 'lucide-react';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [appUrl, setAppUrl] = useState<string>('');
-  const [secretToken, setSecretToken] = useState<string>('');
-  const [currentUser, setCurrentUser] = useState<'Wesley' | 'Luana'>('Wesley');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'recurring'>('dashboard');
-
-  // Load credentials from localStorage
-  useEffect(() => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     const savedUrl = localStorage.getItem('finance_app_url');
     const savedToken = localStorage.getItem('finance_secret_token');
+    return !!(savedUrl && savedToken);
+  });
+  const [appUrl, setAppUrl] = useState<string>(() => {
+    return localStorage.getItem('finance_app_url') || '';
+  });
+  const [secretToken, setSecretToken] = useState<string>(() => {
+    return localStorage.getItem('finance_secret_token') || '';
+  });
+  const [currentUser, setCurrentUser] = useState<'Wesley' | 'Luana'>(() => {
     const savedUser = localStorage.getItem('finance_active_user');
-
-    if (savedUrl && savedToken) {
-      setAppUrl(savedUrl);
-      setSecretToken(savedToken);
-      setIsAuthenticated(true);
-    }
-    if (savedUser === 'Wesley' || savedUser === 'Luana') {
-      setCurrentUser(savedUser);
-    }
-  }, []);
+    return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
+  });
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'recurring'>('dashboard');
 
   const handleConnect = async (url: string, token: string) => {
     // 1. Testa a conexão (Ping)
@@ -144,14 +140,10 @@ function App() {
       {/* Main Content Area */}
       <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {activeTab === 'dashboard' && (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <LayoutDashboard size={48} style={{ color: 'var(--color-primary)', marginBottom: '16px' }} />
-            <h2>Painel Principal</h2>
-            <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Gráficos e estatísticas consolidadas da planilha.</p>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '24px' }} data-token={secretToken ? 'configured' : 'none'}>
-              Conectado ao script: <span style={{ fontFamily: 'monospace', color: 'var(--color-primary)' }}>{appUrl ? `${appUrl.substring(0, 35)}...` : ''}</span>
-            </div>
-          </div>
+          <Dashboard 
+            url={appUrl} 
+            token={secretToken} 
+          />
         )}
 
         {activeTab === 'new-expense' && (

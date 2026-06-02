@@ -273,3 +273,23 @@ header {
   color: hsl(200, 100%, 50%);
   border: 1px solid rgba(0, 150, 255, 0.2);
 }
+
+/* Responsividade Mobile */
+@media (max-width: 600px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+  
+  .container {
+    padding: 16px 12px;
+  }
+  
+  h1 {
+    font-size: 1.6rem !important;
+  }
+  
+  .glass-card {
+    padding: 20px 16px;
+  }
+}
+
