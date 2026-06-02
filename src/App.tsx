@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SetupScreen } from './components/SetupScreen';
+import { testConnection, initializeSpreadsheet } from './services/api';
 import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar } from 'lucide-react';
 
 function App() {
@@ -26,11 +27,17 @@ function App() {
   }, []);
 
   const handleConnect = async (url: string, token: string) => {
-    // In Plan 1.3 we will hook this up to the real API validation.
-    // For now, save local credentials directly to test navigation flow.
+    // 1. Testa a conexão (Ping)
+    await testConnection(url, token);
+    
+    // 2. Garante a inicialização das abas na planilha
+    await initializeSpreadsheet(url, token);
+    
+    // 3. Salva no localStorage em caso de sucesso
     localStorage.setItem('finance_app_url', url);
     localStorage.setItem('finance_secret_token', token);
     localStorage.setItem('finance_active_user', currentUser);
+    
     setAppUrl(url);
     setSecretToken(token);
     setIsAuthenticated(true);
