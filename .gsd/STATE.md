@@ -1,5 +1,5 @@
 ---
-updated: 2026-06-01T21:25:00-04:00
+updated: 2026-06-01T21:44:00-04:00
 ---
 
 # Project State
@@ -7,18 +7,18 @@ updated: 2026-06-01T21:25:00-04:00
 ## Current Position
 
 **Milestone:** v1.0
-**Phase:** 5 (Ready for planning)
-**Task:** All tasks pending
-**Status:** Ready for planning
+**Phase:** 5 (Ready for execution)
+**Task:** Planning complete
+**Status:** Ready for execution
 **Plan:** —
 
 ## Last Action
 
-Adicionada a Fase 5 ao roadmap contendo a gestão histórica de despesas e separação de recorrentes por pessoa.
+Finalizado o planejamento da Fase 5. Criados os planos 5.1 e 5.2 na pasta `.gsd/phases/5/` detalhando a extensão da API do Apps Script para suportar atualizar/excluir, reestruturação de despesas recorrentes no painel, e criação do componente HistoryPanel.tsx.
 
 ## Next Steps
 
-1. `/plan 5` — Criar os planos de execução para a Fase 5.
+1. `/execute 5` — Executar a Fase 5.
 
 ## Active Decisions
 
