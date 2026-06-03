@@ -5,20 +5,30 @@ import { RecurringPanel } from './components/RecurringPanel';
 import { Dashboard } from './components/Dashboard';
 import { HistoryPanel } from './components/HistoryPanel';
 import { testConnection, initializeSpreadsheet } from './services/api';
-import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History } from 'lucide-react';
+import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link } from 'lucide-react';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const savedUrl = localStorage.getItem('finance_app_url');
-    const savedToken = localStorage.getItem('finance_secret_token');
-    return !!(savedUrl && savedToken);
+  const [initialCreds] = useState(() => {
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      const params = new URLSearchParams(hash);
+      const url = params.get('url');
+      const token = params.get('token');
+      if (url && token) {
+        localStorage.setItem('finance_app_url', url);
+        localStorage.setItem('finance_secret_token', token);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        return { url, token, auth: true };
+      }
+    }
+    const savedUrl = localStorage.getItem('finance_app_url') || '';
+    const savedToken = localStorage.getItem('finance_secret_token') || '';
+    return { url: savedUrl, token: savedToken, auth: !!(savedUrl && savedToken) };
   });
-  const [appUrl, setAppUrl] = useState<string>(() => {
-    return localStorage.getItem('finance_app_url') || '';
-  });
-  const [secretToken, setSecretToken] = useState<string>(() => {
-    return localStorage.getItem('finance_secret_token') || '';
-  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(initialCreds.auth);
+  const [appUrl, setAppUrl] = useState<string>(initialCreds.url);
+  const [secretToken, setSecretToken] = useState<string>(initialCreds.token);
   const [currentUser, setCurrentUser] = useState<'Wesley' | 'Luana'>(() => {
     const savedUser = localStorage.getItem('finance_active_user');
     return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
@@ -48,6 +58,18 @@ function App() {
     setIsAuthenticated(false);
     setAppUrl('');
     setSecretToken('');
+  };
+
+  const handleCopyLink = () => {
+    const cleanUrl = window.location.origin + window.location.pathname;
+    const link = `${cleanUrl}#url=${encodeURIComponent(appUrl)}&token=${encodeURIComponent(secretToken)}`;
+    navigator.clipboard.writeText(link)
+      .then(() => {
+        alert('Link de Acesso Rápido copiado! Adicione este link aos seus favoritos ou envie no WhatsApp para logar automaticamente.');
+      })
+      .catch(() => {
+        alert('Não foi possível copiar o link automaticamente.');
+      });
   };
 
   const handleUserToggle = (user: 'Wesley' | 'Luana') => {
@@ -111,6 +133,29 @@ function App() {
                 Luana
               </button>
             </div>
+
+            {/* Link de Acesso Rápido Button */}
+            <button
+              onClick={handleCopyLink}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                transition: 'color 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+              title="Copiar Link de Acesso Rápido"
+            >
+              <Link size={18} />
+              <span className="hidden-mobile" style={{ fontSize: '0.85rem' }}>Link de Acesso</span>
+            </button>
 
             {/* Logout Button */}
             <button

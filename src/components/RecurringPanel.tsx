@@ -138,14 +138,29 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
     ...(data?.luanaExpenses || [])
   ];
 
+  const matchedExpenseIds = new Set<string>();
   const conciliatedRules = data?.recurring.map(rule => {
-    const ruleDesc = (rule.Descrição || rule.desc || '').toLowerCase();
+    const ruleDesc = (rule.Descrição || rule.desc || '').toLowerCase().trim();
+    if (!ruleDesc) {
+      return {
+        rule,
+        isPaid: false,
+        expense: undefined
+      };
+    }
     
     // Find matching transaction
     const matchedExpense = allExpenses.find(exp => {
-      const expDesc = (exp.Descrição || exp.desc || '').toLowerCase();
+      const expId = exp.ID || exp.id || '';
+      if (matchedExpenseIds.has(expId)) return false;
+      
+      const expDesc = (exp.Descrição || exp.desc || '').toLowerCase().trim();
       return expDesc.includes(ruleDesc);
     });
+
+    if (matchedExpense) {
+      matchedExpenseIds.add(matchedExpense.ID || matchedExpense.id || '');
+    }
 
     return {
       rule,
@@ -266,7 +281,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {paid.map(({ rule, expense }) => {
-                const finalVal = expense ? (parseFloat(String(expense.Valor || expense.valor || 0)) || 0) : 0;
+                const finalVal = expense ? (parseFloat(String(expense.Valor !== undefined ? expense.Valor : (expense.valor !== undefined ? expense.valor : 0))) || 0) : 0;
                 const dateValRaw = expense ? (expense.Data || expense.data || '') : '';
                 const dateStr = typeof dateValRaw === 'string' ? dateValRaw : (dateValRaw instanceof Date ? dateValRaw.toISOString() : '');
                 const formattedDate = dateStr ? dateStr.split('T')[0].split('-').reverse().join('/') : 'Data desconhecida';
