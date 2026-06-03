@@ -96,6 +96,17 @@ updated: 2026-06-01T20:42:00-04:00
 
 ---
 
+### Phase 7: Lançamento e Gestão de Recebimentos (Revenues & Cash Flow)
+**Status:** ⬜ Not Started
+**Objective:** Desenvolver o suporte a recebimentos (entradas de receitas) nas planilhas e no frontend, incluindo o formulário de lançamento, listagem e edição no histórico, e visualização de saldos de poupança líquida no Dashboard.
+**Depends on:** Phase 6
+**Requirements:** REQ-13, REQ-14
+
+**Plans:**
+- [ ] TBD (run /plan 7 to create)
+
+---
+
 ## Progress Summary
 
 | Phase | Status | Plans | Complete |
@@ -106,6 +117,7 @@ updated: 2026-06-01T20:42:00-04:00
 | 4     | ✅      | 2/2   | 2026-06-01 |
 | 5     | ✅      | 2/2   | 2026-06-02 |
 | 6     | ✅      | 1/1   | 2026-06-02 |
+| 7     | ⬜      | 0/0   | — |
 
 ---
 
@@ -119,3 +131,4 @@ updated: 2026-06-01T20:42:00-04:00
 | 4     | 2026-06-01 | 2026-06-01 | < 1 dia  |
 | 5     | 2026-06-02 | 2026-06-02 | < 1 dia  |
 | 6     | 2026-06-02 | 2026-06-02 | < 1 dia  |
+| 7     | —          | —          | —        |
