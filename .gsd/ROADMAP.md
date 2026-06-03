@@ -74,13 +74,25 @@ updated: 2026-06-01T20:42:00-04:00
 ---
 
 ### Phase 5: Histórico de Despesas e Separação de Recorrentes (Management & Grouping)
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 **Objective:** Criar aba de histórico para listagem, edição e exclusão de despesas, e organizar as contas recorrentes por pessoa (Wesley/Luana) em tabelas separadas.
 **Depends on:** Phase 4
 **Requirements:** REQ-09, REQ-10
 
 **Plans:**
-- [ ] TBD (run /plan 5 to create)
+- [x] Plan 5.1: Extensão da API e Organização de Recorrentes (completado em 2026-06-02)
+- [x] Plan 5.2: Painel de Histórico e Validação de Fluxos (completado em 2026-06-02)
+
+---
+
+### Phase 6: Autenticação via Hash e Polimento Visual (Polishing & Usability)
+**Status:** ✅ Complete
+**Objective:** Facilitar o login em dispositivos móveis por meio de autenticação via hash na URL, melhorar a precisão da conciliação de contas recorrentes e personalizar o título/favicon do projeto.
+**Depends on:** Phase 5
+**Requirements:** REQ-11, REQ-12
+
+**Plans:**
+- [x] Plan 6.1: Autenticação via Hash e Polimento Visual (completado em 2026-06-02)
 
 ---
 
@@ -88,11 +100,12 @@ updated: 2026-06-01T20:42:00-04:00
 
 | Phase | Status | Plans | Complete |
 |-------|--------|-------|----------|
-| 1 | ✅ | 3/3 | 2026-06-01 |
-| 2 | ✅ | 3/3 | 2026-06-01 |
-| 3 | ✅ | 3/3 | 2026-06-01 |
-| 4 | ✅ | 2/2 | 2026-06-01 |
-| 5 | ⬜ | 0/0 | — |
+| 1     | ✅      | 3/3   | 2026-06-01 |
+| 2     | ✅      | 3/3   | 2026-06-01 |
+| 3     | ✅      | 3/3   | 2026-06-01 |
+| 4     | ✅      | 2/2   | 2026-06-01 |
+| 5     | ✅      | 2/2   | 2026-06-02 |
+| 6     | ✅      | 1/1   | 2026-06-02 |
 
 ---
 
@@ -100,8 +113,9 @@ updated: 2026-06-01T20:42:00-04:00
 
 | Phase | Started | Completed | Duration |
 |-------|---------|-----------|----------|
-| 1 | 2026-06-01 | 2026-06-01 | < 1 dia |
-| 2 | 2026-06-01 | 2026-06-01 | < 1 dia |
-| 3 | 2026-06-01 | 2026-06-01 | < 1 dia |
-| 4 | 2026-06-01 | 2026-06-01 | < 1 dia |
-| 5 | — | — | — |
+| 1     | 2026-06-01 | 2026-06-01 | < 1 dia  |
+| 2     | 2026-06-01 | 2026-06-01 | < 1 dia  |
+| 3     | 2026-06-01 | 2026-06-01 | < 1 dia  |
+| 4     | 2026-06-01 | 2026-06-01 | < 1 dia  |
+| 5     | 2026-06-02 | 2026-06-02 | < 1 dia  |
+| 6     | 2026-06-02 | 2026-06-02 | < 1 dia  |

@@ -7,18 +7,18 @@ updated: 2026-06-01T21:44:00-04:00
 ## Current Position
 
 **Milestone:** v1.0
-**Phase:** 5 (Ready for execution)
-**Task:** Planning complete
-**Status:** Ready for execution
+**Phase:** 6 (Complete)
+**Task:** All completed
+**Status:** Complete
 **Plan:** —
 
 ## Last Action
 
-Finalizado o planejamento da Fase 5. Criados os planos 5.1 e 5.2 na pasta `.gsd/phases/5/` detalhando a extensão da API do Apps Script para suportar atualizar/excluir, reestruturação de despesas recorrentes no painel, e criação do componente HistoryPanel.tsx.
+Concluída a Fase 6. Desenvolvemos a leitura de credenciais via hash da URL para facilitar o login em celulares, adicionamos o botão de Link de Acesso no Header, corrigimos a lógica de conciliação do RecurringPanel contra duplicidade/falsos positivos e customizamos o título/favicon da aba do navegador.
 
 ## Next Steps
 
-1. `/execute 5` — Executar a Fase 5.
+1. O projeto v1.0 está 100% desenvolvido e verificado no repositório local. Próximo passo é realizar o push final e acompanhar a verificação.
 
 ## Active Decisions
 
