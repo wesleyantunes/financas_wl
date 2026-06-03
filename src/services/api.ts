@@ -134,12 +134,16 @@ export async function getMonthData(
   recurring: RawRecurringRule[];
   wesleyExpenses: RawExpense[];
   luanaExpenses: RawExpense[];
+  wesleyReceivables: RawExpense[];
+  luanaReceivables: RawExpense[];
 }> {
   return await request<{
     success: boolean;
     recurring: RawRecurringRule[];
     wesleyExpenses: RawExpense[];
     luanaExpenses: RawExpense[];
+    wesleyReceivables: RawExpense[];
+    luanaReceivables: RawExpense[];
   }>(url, token, 'getMonthData', { month });
 }
 

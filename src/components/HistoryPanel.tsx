@@ -52,6 +52,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [expenses, setExpenses] = useState<NormalizedExpense[]>([]);
+  const [receivables, setReceivables] = useState<NormalizedExpense[]>([]);
+  const [viewTab, setViewTab] = useState<'expenses' | 'receivables'>('expenses');
 
   // Filter States
   const [ownerFilter, setOwnerFilter] = useState<'Todos' | 'Wesley' | 'Luana'>('Todos');
@@ -78,15 +80,16 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
     try {
       const res = await getMonthData(url, token, selectedMonth);
       
-      const parseList = (list: RawExpense[], owner: 'Wesley' | 'Luana'): NormalizedExpense[] => {
+      const parseList = (list: RawExpense[], owner: 'Wesley' | 'Luana', isExpenseType: boolean): NormalizedExpense[] => {
         return (list || []).map(exp => {
           const valRaw = exp.Valor !== undefined ? exp.Valor : exp.valor;
           const valor = typeof valRaw === 'number' ? valRaw : parseFloat(String(valRaw || 0)) || 0;
           
-          const isShared = exp.Compartilhado === true || 
+          const isShared = isExpenseType && (
+                           exp.Compartilhado === true || 
                            exp.Compartilhado === 'true' || 
                            exp.Compartilhado === 'TRUE' || 
-                           String(exp.Compartilhado).toLowerCase() === 'true';
+                           String(exp.Compartilhado).toLowerCase() === 'true');
                            
           const rawDate = exp.Data || exp.data || '';
           let dateStr = '';
@@ -105,19 +108,25 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
             value: valor,
             tag: exp.Tag || exp.tag || 'Outros',
             isShared,
-            installmentGroupId: exp['ID Parcelamento'] || '',
+            installmentGroupId: isExpenseType ? (exp['ID Parcelamento'] || '') : '',
             owner,
             raw: exp
           };
         });
       };
 
-      const wesleyParsed = parseList(res.wesleyExpenses, 'Wesley');
-      const luanaParsed = parseList(res.luanaExpenses, 'Luana');
+      const wesleyParsed = parseList(res.wesleyExpenses, 'Wesley', true);
+      const luanaParsed = parseList(res.luanaExpenses, 'Luana', true);
+      
+      const wesleyRecParsed = parseList(res.wesleyReceivables || [], 'Wesley', false);
+      const luanaRecParsed = parseList(res.luanaReceivables || [], 'Luana', false);
       
       // Ordenar por data decrescente (mais recente primeiro)
-      const combined = [...wesleyParsed, ...luanaParsed].sort((a, b) => b.date.localeCompare(a.date));
-      setExpenses(combined);
+      const combinedExpenses = [...wesleyParsed, ...luanaParsed].sort((a, b) => b.date.localeCompare(a.date));
+      const combinedReceivables = [...wesleyRecParsed, ...luanaRecParsed].sort((a, b) => b.date.localeCompare(a.date));
+      
+      setExpenses(combinedExpenses);
+      setReceivables(combinedReceivables);
 
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Erro ao carregar histórico.';
@@ -192,9 +201,10 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
 
     setSaving(true);
     try {
-      const tabName = `Despesas [${editingExpense.owner}]`;
+      const isExpense = viewTab === 'expenses';
+      const tabName = isExpense ? `Despesas [${editingExpense.owner}]` : `Recebimentos [${editingExpense.owner}]`;
       
-      if (editingExpense.installmentGroupId && editApplyFuture) {
+      if (isExpense && editingExpense.installmentGroupId && editApplyFuture) {
         // Atualização futura/coletiva
         await updateInstallments(
           url,
@@ -211,22 +221,34 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
         );
       } else {
         // Atualização individual
-        // Formato da linha: [id, date, description, value, tag, isShared, installmentGroupId]
-        const descriptionField = editingExpense.installmentGroupId 
-          ? (editingExpense.description.match(/\((\d{2}\/\d{2})\)$/) 
-              ? `${editDescription.trim()} (${editingExpense.description.match(/\((\d{2}\/\d{2})\)$/)?.[1]})`
-              : editDescription.trim())
-          : editDescription.trim();
+        let expenseArray: unknown[];
+        if (isExpense) {
+          // Formato da linha de Despesa: [id, date, description, value, tag, isShared, installmentGroupId]
+          const descriptionField = editingExpense.installmentGroupId 
+            ? (editingExpense.description.match(/\((\d{2}\/\d{2})\)$/) 
+                ? `${editDescription.trim()} (${editingExpense.description.match(/\((\d{2}\/\d{2})\)$/)?.[1]})`
+                : editDescription.trim())
+            : editDescription.trim();
 
-        const expenseArray = [
-          editingExpense.id,
-          editDate,
-          descriptionField,
-          parsedVal,
-          editTag,
-          editIsShared,
-          editingExpense.installmentGroupId
-        ];
+          expenseArray = [
+            editingExpense.id,
+            editDate,
+            descriptionField,
+            parsedVal,
+            editTag,
+            editIsShared,
+            editingExpense.installmentGroupId
+          ];
+        } else {
+          // Formato da linha de Recebimento: [id, date, description, value, tag]
+          expenseArray = [
+            editingExpense.id,
+            editDate,
+            editDescription.trim(),
+            parsedVal,
+            editTag
+          ];
+        }
 
         await updateExpense(url, token, tabName, editingExpense.id, expenseArray);
       }
@@ -234,7 +256,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
       setEditingExpense(null);
       await fetchExpenses();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao atualizar despesa.');
+      alert(err instanceof Error ? err.message : 'Erro ao atualizar lançamento.');
     } finally {
       setSaving(false);
     }
@@ -246,9 +268,10 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
 
     setRemoving(true);
     try {
-      const tabName = `Despesas [${deletingExpense.owner}]`;
+      const isExpense = viewTab === 'expenses';
+      const tabName = isExpense ? `Despesas [${deletingExpense.owner}]` : `Recebimentos [${deletingExpense.owner}]`;
 
-      if (deleteOption === 'future' && deletingExpense.installmentGroupId) {
+      if (isExpense && deleteOption === 'future' && deletingExpense.installmentGroupId) {
         await deleteInstallments(
           url, 
           token, 
@@ -263,14 +286,16 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
       setDeletingExpense(null);
       await fetchExpenses();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao excluir despesa.');
+      alert(err instanceof Error ? err.message : 'Erro ao excluir lançamento.');
     } finally {
       setRemoving(false);
     }
   };
 
   // Apply filters
-  const filteredExpenses = expenses.filter(exp => {
+  const activeItems = viewTab === 'expenses' ? expenses : receivables;
+
+  const filteredExpenses = activeItems.filter(exp => {
     // Owner
     if (ownerFilter !== 'Todos' && exp.owner !== ownerFilter) return false;
     
@@ -303,6 +328,69 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
   return (
     <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
+      {/* Selector Despesas vs Recebimentos */}
+      <div style={{
+        display: 'flex',
+        backgroundColor: 'var(--bg-secondary)',
+        borderRadius: '8px',
+        padding: '4px',
+        border: '1px solid var(--border-glass)',
+        width: '100%',
+        maxWidth: '400px',
+        margin: '0 auto'
+      }}>
+        <button
+          type="button"
+          onClick={() => {
+            setViewTab('expenses');
+            setOwnerFilter('Todos');
+          }}
+          style={{
+            flex: 1,
+            padding: '10px 16px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: viewTab === 'expenses' ? 'var(--color-primary)' : 'transparent',
+            color: viewTab === 'expenses' ? 'hsl(140, 10%, 4%)' : 'var(--text-muted)',
+            fontWeight: '600',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
+          Despesas
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setViewTab('receivables');
+            setOwnerFilter('Todos');
+          }}
+          style={{
+            flex: 1,
+            padding: '10px 16px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: viewTab === 'receivables' ? 'var(--color-primary)' : 'transparent',
+            color: viewTab === 'receivables' ? 'hsl(140, 10%, 4%)' : 'var(--text-muted)',
+            fontWeight: '600',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
+          Recebimentos
+        </button>
+      </div>
+
       {/* Month Selector Card */}
       <div className="glass-card" style={{
         display: 'flex',
@@ -402,9 +490,11 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
           <strong style={{ fontSize: '1.4rem', color: 'var(--text-title)' }}>
             R$ {stats.wesleyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </strong>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Compartilhado: R$ {stats.wesleyShared.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </div>
+          {viewTab === 'expenses' && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Compartilhado: R$ {stats.wesleyShared.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+          )}
         </div>
 
         {/* Luana Stats */}
@@ -416,9 +506,11 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
           <strong style={{ fontSize: '1.4rem', color: 'var(--text-title)' }}>
             R$ {stats.luanaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </strong>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Compartilhado: R$ {stats.luanaShared.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </div>
+          {viewTab === 'expenses' && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Compartilhado: R$ {stats.luanaShared.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+          )}
         </div>
 
         {/* Total General */}
@@ -430,9 +522,11 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
           <strong style={{ fontSize: '1.4rem', color: 'var(--text-title)' }}>
             R$ {(stats.wesleyTotal + stats.luanaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </strong>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Total Compartilhado: R$ {(stats.wesleyShared + stats.luanaShared).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </div>
+          {viewTab === 'expenses' && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Total Compartilhado: R$ {(stats.wesleyShared + stats.luanaShared).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -446,7 +540,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
           </div>
         ) : filteredExpenses.length === 0 ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Nenhuma despesa localizada com os filtros ativos.
+            {viewTab === 'expenses' ? 'Nenhuma despesa localizada com os filtros ativos.' : 'Nenhum recebimento localizado com os filtros ativos.'}
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -456,7 +550,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Dono</th>
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Descrição</th>
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Categoria</th>
-                <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Tipo</th>
+                {viewTab === 'expenses' && <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Tipo</th>}
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, textAlign: 'right' }}>Valor</th>
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center', width: '100px' }}>Ações</th>
               </tr>
@@ -506,17 +600,19 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
                     </td>
                     
                     {/* Shared vs Individual */}
-                    <td style={{ padding: '12px 8px' }}>
-                      {exp.isShared ? (
-                        <span className="badge badge-shared" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Users size={10} /> Compartilhado
-                        </span>
-                      ) : (
-                        <span className="badge badge-individual" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <User size={10} /> Individual
-                        </span>
-                      )}
-                    </td>
+                    {viewTab === 'expenses' && (
+                      <td style={{ padding: '12px 8px' }}>
+                        {exp.isShared ? (
+                          <span className="badge badge-shared" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Users size={10} /> Compartilhado
+                          </span>
+                        ) : (
+                          <span className="badge badge-individual" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <User size={10} /> Individual
+                          </span>
+                        )}
+                      </td>
+                    )}
                     
                     {/* Value */}
                     <td style={{ padding: '12px 8px', fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--text-title)', textAlign: 'right' }}>
@@ -585,7 +681,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
         }}>
           <div className="glass-card" style={{ width: '90%', maxWidth: '450px', padding: '24px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-active)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Editar Despesa ({editingExpense.owner})</h3>
+              <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Editar {viewTab === 'expenses' ? 'Despesa' : 'Recebimento'} ({editingExpense.owner})</h3>
               <button 
                 onClick={() => setEditingExpense(null)} 
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
@@ -645,29 +741,31 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
                   onChange={(e) => setEditTag(e.target.value)}
                   disabled={saving}
                 >
-                  {DEFAULT_TAGS.map(t => (
+                  {(viewTab === 'expenses' ? DEFAULT_TAGS : ['Salário', 'Freelance', 'Rendimentos', 'Outros']).map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
               </div>
 
               {/* Compartilhado */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
-                <input
-                  type="checkbox"
-                  id="editIsShared"
-                  checked={editIsShared}
-                  onChange={(e) => setEditIsShared(e.target.checked)}
-                  disabled={saving}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--color-primary)' }}
-                />
-                <label htmlFor="editIsShared" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>
-                  Despesa Compartilhada (Divisão 50/50)
-                </label>
-              </div>
+              {viewTab === 'expenses' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
+                  <input
+                    type="checkbox"
+                    id="editIsShared"
+                    checked={editIsShared}
+                    onChange={(e) => setEditIsShared(e.target.checked)}
+                    disabled={saving}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--color-primary)' }}
+                  />
+                  <label htmlFor="editIsShared" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>
+                    Despesa Compartilhada (Divisão 50/50)
+                  </label>
+                </div>
+              )}
 
               {/* Future Installments Switch (Only for parcelled ones) */}
-              {editingExpense.installmentGroupId && (
+              {viewTab === 'expenses' && editingExpense.installmentGroupId && (
                 <div style={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
@@ -737,7 +835,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
           zIndex: 2000
         }}>
           <div className="glass-card" style={{ width: '90%', maxWidth: '420px', padding: '24px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--color-danger)' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', color: 'var(--text-title)' }}>Excluir Despesa</h3>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', color: 'var(--text-title)' }}>Excluir {viewTab === 'expenses' ? 'Despesa' : 'Recebimento'}</h3>
             
             {deletingExpense.installmentGroupId ? (
               // Parcelled flow
@@ -816,7 +914,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
               // Standard flow
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                  Tem certeza que deseja excluir a despesa <strong>{deletingExpense.description}</strong> no valor de <strong>R$ {deletingExpense.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>?
+                  Tem certeza que deseja excluir {viewTab === 'expenses' ? 'a despesa' : 'o recebimento'} <strong>{deletingExpense.description}</strong> no valor de <strong>R$ {deletingExpense.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>?
                 </p>
                 
                 <div style={{ display: 'flex', gap: '12px' }}>

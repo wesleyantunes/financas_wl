@@ -59,6 +59,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
     recurring: RawRecurringRule[];
     wesleyExpenses: RawExpense[];
     luanaExpenses: RawExpense[];
+    wesleyReceivables: RawExpense[];
+    luanaReceivables: RawExpense[];
   } | null>(null);
 
   useEffect(() => {
@@ -152,9 +154,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
     });
   };
 
+  // Helper para normalizar recebimentos
+  const parseReceivables = (rawList: RawExpense[]) => {
+    return (rawList || []).map(rec => {
+      const valRaw = rec.Valor !== undefined ? rec.Valor : rec.valor;
+      const valor = typeof valRaw === 'number' ? valRaw : parseFloat(String(valRaw || 0)) || 0;
+      return {
+        id: rec.ID || rec.id || '',
+        description: rec.Descrição || rec.desc || 'Sem descrição',
+        value: valor,
+        tag: rec.Tag || rec.tag || 'Outros'
+      };
+    });
+  };
+
   const wesleyList = parseExpenses(data?.wesleyExpenses || []);
   const luanaList = parseExpenses(data?.luanaExpenses || []);
   const allExpenses = [...wesleyList, ...luanaList];
+
+  const wesleyReceivablesList = parseReceivables(data?.wesleyReceivables || []);
+  const luanaReceivablesList = parseReceivables(data?.luanaReceivables || []);
 
   // Cálculos Financeiros
   const wesleyPaid = wesleyList.reduce((acc, curr) => acc + curr.value, 0);
@@ -173,8 +192,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
   const luanaFairShare = luanaIndividual + (totalShared / 2);
 
   // Reconciliação: Wesley Pago - Wesley Fair Share
-  // Ex: se Wesley pagou R$ 1000 no total, e sua fatia justa é R$ 800, ele pagou R$ 200 a mais, então Luana deve R$ 200 a ele.
   const reconciliationDiff = wesleyPaid - wesleyFairShare;
+
+  // Cálculos de Receitas e Poupança
+  const wesleyIncome = wesleyReceivablesList.reduce((acc, curr) => acc + curr.value, 0);
+  const luanaIncome = luanaReceivablesList.reduce((acc, curr) => acc + curr.value, 0);
+  const totalIncome = wesleyIncome + luanaIncome;
+
+  const wesleySavings = wesleyIncome - wesleyFairShare;
+  const luanaSavings = luanaIncome - luanaFairShare;
+  const totalSavings = totalIncome - totalPaid;
 
   // 1. Gráfico de Pizza (Por Categoria/Tag)
   const tagGroup: Record<string, number> = {};
@@ -297,98 +324,164 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
 
       {/* KPI Cards Grid */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="glass-card shimmer" style={{ height: '108px', borderRadius: '16px' }}></div>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            {[1, 2, 3].map(i => (
+              <div key={`s1-${i}`} className="glass-card shimmer" style={{ height: '108px', borderRadius: '16px' }}></div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={`s2-${i}`} className="glass-card shimmer" style={{ height: '108px', borderRadius: '16px' }}></div>
+            ))}
+          </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Card 1: Total Geral */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>TOTAL DO MÊS</span>
-              <DollarSign size={18} style={{ color: 'var(--color-primary)' }} />
+          {/* Seção Poupança e Recebimentos */}
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '-8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <DollarSign size={20} style={{ color: 'var(--color-primary)' }} />
+            Recebimentos e Poupança Líquida
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            {/* Poupança Casal */}
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>POUPANÇA LÍQUIDA CASAL</span>
+                <Users size={18} style={{ color: 'var(--color-primary)' }} />
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: '700', color: totalSavings >= 0 ? 'var(--color-primary)' : 'var(--color-danger)' }}>
+                {formatBRL(totalSavings)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Receita total: {formatBRL(totalIncome)}</span>
+                <span>Gasto total: {formatBRL(totalPaid)}</span>
+              </div>
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-title)' }}>
-              {formatBRL(totalPaid)}
+
+            {/* Poupança Wesley */}
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>POUPANÇA WESLEY</span>
+                <User size={18} style={{ color: '#00b4d8' }} />
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: '700', color: wesleySavings >= 0 ? '#00b4d8' : 'var(--color-danger)' }}>
+                {formatBRL(wesleySavings)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Receita: {formatBRL(wesleyIncome)}</span>
+                <span>Gasto Real: {formatBRL(wesleyFairShare)}</span>
+              </div>
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Compartilhado: <span style={{ color: 'var(--color-primary)' }}>{formatBRL(totalShared)}</span>
+
+            {/* Poupança Luana */}
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>POUPANÇA LUANA</span>
+                <User size={18} style={{ color: '#ff007f' }} />
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: '700', color: luanaSavings >= 0 ? '#ff007f' : 'var(--color-danger)' }}>
+                {formatBRL(luanaSavings)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Receita: {formatBRL(luanaIncome)}</span>
+                <span>Gasto Real: {formatBRL(luanaFairShare)}</span>
+              </div>
             </div>
           </div>
 
-          {/* Card 2: Wesley Pago */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>PAGO POR WESLEY</span>
-              <User size={18} style={{ color: '#00b4d8' }} />
+          {/* Seção Despesas */}
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '-8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Activity size={20} style={{ color: 'var(--color-primary)' }} />
+            Despesas e Acertos do Mês
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            
+            {/* Card 1: Total Geral */}
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>TOTAL DO MÊS</span>
+                <DollarSign size={18} style={{ color: 'var(--color-primary)' }} />
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-title)' }}>
+                {formatBRL(totalPaid)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Compartilhado: <span style={{ color: 'var(--color-primary)' }}>{formatBRL(totalShared)}</span>
+              </div>
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-title)' }}>
-              {formatBRL(wesleyPaid)}
+
+            {/* Card 2: Wesley Pago */}
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>PAGO POR WESLEY</span>
+                <User size={18} style={{ color: '#00b4d8' }} />
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-title)' }}>
+                {formatBRL(wesleyPaid)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Gasto Real: <span style={{ color: '#00b4d8' }}>{formatBRL(wesleyFairShare)}</span>
+              </div>
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Gasto Real: <span style={{ color: '#00b4d8' }}>{formatBRL(wesleyFairShare)}</span>
+
+            {/* Card 3: Luana Pago */}
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>PAGO POR LUANA</span>
+                <User size={18} style={{ color: '#ff007f' }} />
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-title)' }}>
+                {formatBRL(luanaPaid)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Gasto Real: <span style={{ color: '#ff007f' }}>{formatBRL(luanaFairShare)}</span>
+              </div>
+            </div>
+
+            {/* Card 4: Reconciliação */}
+            <div className="glass-card" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              padding: '20px',
+              border: Math.abs(reconciliationDiff) > 0.01 ? '1px solid var(--border-active)' : '1px solid var(--border-glass)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>ACERTO DE CONTAS</span>
+                <Users size={18} style={{ color: 'var(--color-primary)' }} />
+              </div>
+              {Math.abs(reconciliationDiff) <= 0.01 ? (
+                <>
+                  <div style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--color-primary)' }}>
+                    Equilibrado
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Nenhum acerto pendente
+                  </div>
+                </>
+              ) : reconciliationDiff > 0 ? (
+                <>
+                  <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#ff007f' }}>
+                    Luana deve
+                  </div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-title)' }}>
+                    Pagar {formatBRL(reconciliationDiff)} para Wesley
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#00b4d8' }}>
+                    Wesley deve
+                  </div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-title)' }}>
+                    Pagar {formatBRL(Math.abs(reconciliationDiff))} para Luana
+                  </div>
+                </>
+              )}
             </div>
           </div>
-
-          {/* Card 3: Luana Pago */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>PAGO POR LUANA</span>
-              <User size={18} style={{ color: '#ff007f' }} />
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-title)' }}>
-              {formatBRL(luanaPaid)}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Gasto Real: <span style={{ color: '#ff007f' }}>{formatBRL(luanaFairShare)}</span>
-            </div>
-          </div>
-
-          {/* Card 4: Reconciliação */}
-          <div className="glass-card" style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            padding: '20px',
-            border: Math.abs(reconciliationDiff) > 0.01 ? '1px solid var(--border-active)' : '1px solid var(--border-glass)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>ACERTO DE CONTAS</span>
-              <Users size={18} style={{ color: 'var(--color-primary)' }} />
-            </div>
-            {Math.abs(reconciliationDiff) <= 0.01 ? (
-              <>
-                <div style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--color-primary)' }}>
-                  Equilibrado
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Nenhum acerto pendente
-                </div>
-              </>
-            ) : reconciliationDiff > 0 ? (
-              <>
-                <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#ff007f' }}>
-                  Luana deve
-                </div>
-                <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-title)' }}>
-                  Pagar {formatBRL(reconciliationDiff)} para Wesley
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#00b4d8' }}>
-                  Wesley deve
-                </div>
-                <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-title)' }}>
-                  Pagar {formatBRL(Math.abs(reconciliationDiff))} para Luana
-                </div>
-              </>
-            )}
-          </div>
-
         </div>
       )}
 

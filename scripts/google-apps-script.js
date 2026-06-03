@@ -48,7 +48,7 @@ function doPost(e) {
     
     // Ação: Inicializar Abas da Planilha
     if (action === 'initialize') {
-      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes'];
+      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]'];
       const results = {};
       
       activeTabs.forEach(tabName => {
@@ -62,6 +62,16 @@ function doPost(e) {
             
             // Estilização do cabeçalho (Verde Sicredi)
             sheet.getRange("A1:G1").setFontWeight("bold")
+                                    .setBackground("#00a859")
+                                    .setFontColor("#ffffff")
+                                    .setHorizontalAlignment("center");
+            sheet.setFrozenRows(1);
+          } else if (tabName.startsWith('Recebimentos')) {
+            // Estrutura das abas de recebimentos
+            sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag']);
+            
+            // Estilização do cabeçalho (Verde Sicredi)
+            sheet.getRange("A1:E1").setFontWeight("bold")
                                     .setBackground("#00a859")
                                     .setFontColor("#ffffff")
                                     .setHorizontalAlignment("center");
@@ -147,13 +157,15 @@ function doPost(e) {
       const recurringSheet = spreadsheet.getSheetByName('Recorrentes');
       const wesleySheet = spreadsheet.getSheetByName('Despesas [Wesley]');
       const luanaSheet = spreadsheet.getSheetByName('Despesas [Luana]');
+      const wesleyIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Wesley]');
+      const luanaIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Luana]');
       
       // Filtrar regras recorrentes ativas
       const recurring = getRowsAsObjects(recurringSheet, function(row) {
         return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
       });
       
-      // Filtro para despesas do mês selecionado
+      // Filtro para despesas/recebimentos do mês selecionado
       const filterMonthFn = function(row) {
         if (!row.Data) return false;
         let dateStr = "";
@@ -169,12 +181,16 @@ function doPost(e) {
       
       const wesleyExpenses = getRowsAsObjects(wesleySheet, filterMonthFn);
       const luanaExpenses = getRowsAsObjects(luanaSheet, filterMonthFn);
+      const wesleyReceivables = getRowsAsObjects(wesleyIncomeSheet, filterMonthFn);
+      const luanaReceivables = getRowsAsObjects(luanaIncomeSheet, filterMonthFn);
       
       return createJsonResponse({
         success: true,
         recurring: recurring,
         wesleyExpenses: wesleyExpenses,
-        luanaExpenses: luanaExpenses
+        luanaExpenses: luanaExpenses,
+        wesleyReceivables: wesleyReceivables,
+        luanaReceivables: luanaReceivables
       });
     }
 

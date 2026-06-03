@@ -9,8 +9,10 @@ interface ExpenseFormProps {
 }
 
 const DEFAULT_TAGS = ['Alimentação', 'Lazer', 'Transporte', 'Saúde', 'Moradia', 'Educação', 'Supermercado', 'Veículo', 'Pets', 'Outros'];
+const RECEIVABLE_TAGS = ['Salário', 'Freelance', 'Rendimentos', 'Outros'];
 
 export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUser }) => {
+  const [entryType, setEntryType] = useState<'expense' | 'receivable'>('expense');
   const [description, setDescription] = useState('');
   const [value, setValue] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -22,6 +24,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+
+  const tagsList = entryType === 'expense' ? DEFAULT_TAGS : RECEIVABLE_TAGS;
+
+  const handleEntryTypeChange = (type: 'expense' | 'receivable') => {
+    setEntryType(type);
+    setSelectedTag(type === 'expense' ? DEFAULT_TAGS[0] : RECEIVABLE_TAGS[0]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +53,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
     }
 
     const parsedInstallments = parseInt(installments);
-    if (isInstallment) {
+    if (entryType === 'expense' && isInstallment) {
       if (isNaN(parsedInstallments) || parsedInstallments < 2) {
         setError('O número de parcelas deve ser no mínimo 2.');
         return;
@@ -64,7 +73,16 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
         return `${y}-${m}-${day}`;
       };
 
-      if (isInstallment) {
+      if (entryType === 'receivable') {
+        const id = `rec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        generatedExpenses.push([
+          id,
+          date,
+          description,
+          parsedValue,
+          selectedTag
+        ]);
+      } else if (isInstallment) {
         const installmentValue = parseFloat((parsedValue / parsedInstallments).toFixed(2));
         const installmentGroupId = `inst_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
@@ -99,17 +117,23 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
         ]);
       }
 
-      const tabName = `Despesas [${currentUser}]`;
+      const tabName = entryType === 'expense' ? `Despesas [${currentUser}]` : `Recebimentos [${currentUser}]`;
       await addExpenses(url, token, tabName, generatedExpenses);
 
       // Feedback de Sucesso
-      setToastMessage(isInstallment ? `${parsedInstallments} parcelas gravadas com sucesso!` : 'Despesa cadastrada com sucesso!');
+      setToastMessage(
+        entryType === 'receivable' 
+          ? 'Recebimento cadastrado com sucesso!' 
+          : isInstallment 
+            ? `${parsedInstallments} parcelas gravadas com sucesso!` 
+            : 'Despesa cadastrada com sucesso!'
+      );
 
       // Limpeza do formulário
       setDescription('');
       setValue('');
       setDate(new Date().toISOString().split('T')[0]);
-      setSelectedTag(DEFAULT_TAGS[0]);
+      setSelectedTag(entryType === 'expense' ? DEFAULT_TAGS[0] : RECEIVABLE_TAGS[0]);
       setIsShared(false);
       setIsInstallment(false);
       setInstallments('2');
@@ -119,7 +143,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
       }, 3000);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocorreu um erro ao enviar a despesa.');
+      setError(err instanceof Error ? err.message : 'Ocorreu um erro ao enviar o lançamento.');
     } finally {
       setSubmitting(false);
     }
@@ -158,8 +182,65 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
           Novo Lançamento
         </h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
-          Inserindo na aba de <strong style={{ color: 'var(--text-title)' }}>Despesas [{currentUser}]</strong>
+          Inserindo na aba de <strong style={{ color: 'var(--text-title)' }}>
+            {entryType === 'expense' ? `Despesas [${currentUser}]` : `Recebimentos [${currentUser}]`}
+          </strong>
         </p>
+
+        {/* Switch Despesa/Recebimento */}
+        <div style={{
+          display: 'flex',
+          backgroundColor: 'var(--bg-secondary)',
+          borderRadius: '8px',
+          padding: '4px',
+          border: '1px solid var(--border-glass)',
+          marginBottom: '20px'
+        }}>
+          <button
+            type="button"
+            onClick={() => handleEntryTypeChange('expense')}
+            style={{
+              flex: 1,
+              padding: '10px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: entryType === 'expense' ? 'var(--color-primary)' : 'transparent',
+              color: entryType === 'expense' ? 'hsl(140, 10%, 4%)' : 'var(--text-muted)',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            Despesa
+          </button>
+          <button
+            type="button"
+            onClick={() => handleEntryTypeChange('receivable')}
+            style={{
+              flex: 1,
+              padding: '10px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: entryType === 'receivable' ? 'var(--color-primary)' : 'transparent',
+              color: entryType === 'receivable' ? 'hsl(140, 10%, 4%)' : 'var(--text-muted)',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            Recebimento
+          </button>
+        </div>
 
         {error && (
           <div style={{
@@ -192,7 +273,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
               id="expense-desc"
               type="text"
               className="form-control"
-              placeholder="Ex: Supermercado, Combustível, Aluguel"
+              placeholder={entryType === 'expense' ? "Ex: Supermercado, Combustível, Aluguel" : "Ex: Salário, Freelance, Rendimentos"}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={submitting}
@@ -223,7 +304,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
           <div className="form-group">
             <label className="form-label" htmlFor="expense-date">
               <Calendar size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-              Data de Vencimento / Compra
+              Data {entryType === 'expense' ? 'de Vencimento / Compra' : 'do Recebimento'}
             </label>
             <input
               id="expense-date"
@@ -249,79 +330,81 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
               disabled={submitting}
               style={{ cursor: 'pointer' }}
             >
-              {DEFAULT_TAGS.map(tag => (
+              {tagsList.map(tag => (
                 <option key={tag} value={tag}>{tag}</option>
               ))}
             </select>
           </div>
 
           {/* Toggles (Compartilhado & Parcelado) */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '12px',
-            backgroundColor: 'var(--bg-secondary)',
-            padding: '14px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-glass)'
-          }}>
-            {/* Compartilhado */}
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '500'
+          {entryType === 'expense' && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '12px',
+              backgroundColor: 'var(--bg-secondary)',
+              padding: '14px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-glass)'
             }}>
-              <input
-                type="checkbox"
-                checked={isShared}
-                onChange={(e) => setIsShared(e.target.checked)}
-                disabled={submitting}
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  accentColor: 'var(--color-primary)',
-                  cursor: 'pointer'
-                }}
-              />
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Users size={14} style={{ color: 'var(--text-muted)' }} />
-                Compartilhado
-              </span>
-            </label>
+              {/* Compartilhado */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '500'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={isShared}
+                  onChange={(e) => setIsShared(e.target.checked)}
+                  disabled={submitting}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    accentColor: 'var(--color-primary)',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Users size={14} style={{ color: 'var(--text-muted)' }} />
+                  Compartilhado
+                </span>
+              </label>
 
-            {/* Parcelado */}
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '500'
-            }}>
-              <input
-                type="checkbox"
-                checked={isInstallment}
-                onChange={(e) => setIsInstallment(e.target.checked)}
-                disabled={submitting}
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  accentColor: 'var(--color-primary)',
-                  cursor: 'pointer'
-                }}
-              />
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <RefreshCw size={14} style={{ color: 'var(--text-muted)' }} />
-                Parcelado
-              </span>
-            </label>
-          </div>
+              {/* Parcelado */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '500'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={isInstallment}
+                  onChange={(e) => setIsInstallment(e.target.checked)}
+                  disabled={submitting}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    accentColor: 'var(--color-primary)',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <RefreshCw size={14} style={{ color: 'var(--text-muted)' }} />
+                  Parcelado
+                </span>
+              </label>
+            </div>
+          )}
 
           {/* Campos Adicionais de Parcelamento */}
-          {isInstallment && (
+          {entryType === 'expense' && isInstallment && (
             <div style={{
               display: 'flex',
               flexDirection: 'column',
