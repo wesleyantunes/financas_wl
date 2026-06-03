@@ -1,23 +1,20 @@
----
-milestone: v1.0
-version: 1.0.0
-updated: 2026-06-01T20:42:00-04:00
----
-
-> **Current Phase:** 5 - Histórico de Despesas e Separação de Recorrentes (Management & Grouping)
-> **Status:** executing
+> **Current Phase:** Phase 7: Lançamento e Gestão de Recebimentos (Revenues & Cash Flow)
+> **Status:** ✅ Complete
 
 ## Must-Haves (from SPEC)
 
 - [x] Tela de Configuração inicial do Web App URL e Token Secreto do Google Apps Script.
 - [x] Script Google Apps Script robusto pronto para manipulação e inicialização da planilha.
-- [x] Detecção automática e criação da planilha estruturada com abas Wesley/Luana/Recorrentes.
+- [x] Detecção automática e criação da planilha estruturada com abas Wesley/Luana/Recorrentes/Recebimentos.
 - [x] Cadastro rápido de despesas individuais e compartilhadas por tag.
 - [x] Sistema inteligente de parcelamento com gravação de múltiplas linhas futuras.
 - [x] Painel de controle de despesas recorrentes (água, energia, Netflix) com ajuste no valor real.
 - [x] Dashboard minimalista premium com gráficos interativos em Recharts (estilo Sicredi Dark).
-- [ ] Listagem de despesas lançadas com funcionalidade de edição e exclusão.
-- [ ] Separação e visualização de pagamentos recorrentes por pessoa (Wesley / Luana / Compartilhado).
+- [x] Listagem de despesas lançadas com funcionalidade de edição e exclusão.
+- [x] Separação e visualização de pagamentos recorrentes por pessoa (Wesley / Luana / Compartilhado).
+- [x] Lançamento de despesas e receitas unificado no formulário com alternador rápido.
+- [x] Cartões de poupança líquida mensal (individual e do casal) no Dashboard.
+- [x] Listagem, edição e exclusão de receitas independentes no painel de Histórico.
 
 ---
 
@@ -97,13 +94,13 @@ updated: 2026-06-01T20:42:00-04:00
 ---
 
 ### Phase 7: Lançamento e Gestão de Recebimentos (Revenues & Cash Flow)
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 **Objective:** Desenvolver o suporte a recebimentos (entradas de receitas) nas planilhas e no frontend, incluindo o formulário de lançamento, listagem e edição no histórico, e visualização de saldos de poupança líquida no Dashboard.
 **Depends on:** Phase 6
 **Requirements:** REQ-13, REQ-14
 
 **Plans:**
-- [ ] TBD (run /plan 7 to create)
+- [x] Plan 7.1: Lançamento e Gestão de Recebimentos (completado em 2026-06-03)
 
 ---
 
@@ -117,7 +114,7 @@ updated: 2026-06-01T20:42:00-04:00
 | 4     | ✅      | 2/2   | 2026-06-01 |
 | 5     | ✅      | 2/2   | 2026-06-02 |
 | 6     | ✅      | 1/1   | 2026-06-02 |
-| 7     | ⬜      | 0/0   | — |
+| 7     | ✅      | 1/1   | 2026-06-03 |
 
 ---
 
@@ -131,4 +128,4 @@ updated: 2026-06-01T20:42:00-04:00
 | 4     | 2026-06-01 | 2026-06-01 | < 1 dia  |
 | 5     | 2026-06-02 | 2026-06-02 | < 1 dia  |
 | 6     | 2026-06-02 | 2026-06-02 | < 1 dia  |
-| 7     | —          | —          | —        |
+| 7     | 2026-06-03 | 2026-06-03 | < 1 dia  |
