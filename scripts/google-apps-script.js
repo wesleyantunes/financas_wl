@@ -52,55 +52,16 @@ function doPost(e) {
       const results = {};
       
       activeTabs.forEach(tabName => {
-        let sheet = spreadsheet.getSheetByName(tabName);
-        if (!sheet) {
-          sheet = spreadsheet.insertSheet(tabName);
-          
-          if (tabName.startsWith('Despesas')) {
-            // Estrutura das abas de despesas
-            sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag', 'Compartilhado', 'ID Parcelamento', 'Meio de Pagamento']);
-            
-            // Estilização do cabeçalho (Verde Sicredi)
-            sheet.getRange("A1:H1").setFontWeight("bold")
-                                    .setBackground("#00a859")
-                                    .setFontColor("#ffffff")
-                                    .setHorizontalAlignment("center");
-            sheet.setFrozenRows(1);
-          } else if (tabName.startsWith('Recebimentos')) {
-            // Estrutura das abas de recebimentos
-            sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag']);
-            
-            // Estilização do cabeçalho (Verde Sicredi)
-            sheet.getRange("A1:E1").setFontWeight("bold")
-                                    .setBackground("#00a859")
-                                    .setFontColor("#ffffff")
-                                    .setHorizontalAlignment("center");
-            sheet.setFrozenRows(1);
-          } else if (tabName === 'Recorrentes') {
-            // Estrutura da aba de recorrentes
-            sheet.appendRow(['ID', 'Descrição', 'Valor Estimado', 'Dia Vencimento', 'Tipo', 'Dono', 'Ativo']);
-            
-            sheet.getRange("A1:G1").setFontWeight("bold")
-                                    .setBackground("#00a859")
-                                    .setFontColor("#ffffff")
-                                    .setHorizontalAlignment("center");
-            sheet.setFrozenRows(1);
-            
-            // Cadastra alguns exemplos úteis
+        const sheetExists = !!spreadsheet.getSheetByName(tabName);
+        const sheet = getOrCreateSheet(spreadsheet, tabName);
+        
+        if (!sheetExists) {
+          // Exemplos específicos pós criação
+          if (tabName === 'Recorrentes') {
             sheet.appendRow(['rec_ex1', 'Netflix', 55.90, 10, 'Fixo', 'Compartilhado', true]);
             sheet.appendRow(['rec_ex2', 'Energia Elétrica', 200.00, 15, 'Variável', 'Compartilhado', true]);
             sheet.appendRow(['rec_ex3', 'Água', 80.00, 20, 'Variável', 'Compartilhado', true]);
           } else if (tabName === 'Recorrentes Recebimentos') {
-            // Estrutura da aba de recorrentes recebimentos
-            sheet.appendRow(['ID', 'Descrição', 'Valor Estimado', 'Dia Recebimento', 'Dono', 'Ativo']);
-            
-            sheet.getRange("A1:F1").setFontWeight("bold")
-                                    .setBackground("#00a859")
-                                    .setFontColor("#ffffff")
-                                    .setHorizontalAlignment("center");
-            sheet.setFrozenRows(1);
-            
-            // Exemplos úteis
             sheet.appendRow(['recrec_ex1', 'Salário Wesley', 5000.00, 5, 'Wesley', true]);
             sheet.appendRow(['recrec_ex2', 'Pró-labore Luana', 4000.00, 10, 'Luana', true]);
           }
@@ -140,10 +101,7 @@ function doPost(e) {
         return createJsonResponse({ success: false, error: 'Aba ou transações não especificadas' }, 400);
       }
       
-      const sheet = spreadsheet.getSheetByName(tabName);
-      if (!sheet) {
-        return createJsonResponse({ success: false, error: 'Aba "' + tabName + '" não encontrada na planilha' }, 404);
-      }
+      const sheet = getOrCreateSheet(spreadsheet, tabName);
       
       const startRow = sheet.getLastRow() + 1;
       const numRows = expenses.length;
@@ -164,10 +122,7 @@ function doPost(e) {
         return createJsonResponse({ success: false, error: 'Dados da regra não especificados' }, 400);
       }
       
-      const sheet = spreadsheet.getSheetByName(tabName);
-      if (!sheet) {
-        return createJsonResponse({ success: false, error: 'Aba "' + tabName + '" não encontrada na planilha' }, 404);
-      }
+      const sheet = getOrCreateSheet(spreadsheet, tabName);
       
       sheet.appendRow(rule);
       return createJsonResponse({ success: true });
@@ -489,4 +444,46 @@ function getRowsAsObjects(sheet, filterFn) {
     }
   }
   return results;
+}
+
+/**
+ * Retorna uma aba existente ou cria uma nova com o layout correspondente se não existir.
+ */
+function getOrCreateSheet(spreadsheet, tabName) {
+  let sheet = spreadsheet.getSheetByName(tabName);
+  if (sheet) return sheet;
+
+  sheet = spreadsheet.insertSheet(tabName);
+  
+  if (tabName.startsWith('Despesas')) {
+    sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag', 'Compartilhado', 'ID Parcelamento', 'Meio de Pagamento']);
+    sheet.getRange("A1:H1").setFontWeight("bold")
+                            .setBackground("#00a859")
+                            .setFontColor("#ffffff")
+                            .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+  } else if (tabName.startsWith('Recebimentos')) {
+    sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag']);
+    sheet.getRange("A1:E1").setFontWeight("bold")
+                            .setBackground("#00a859")
+                            .setFontColor("#ffffff")
+                            .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+  } else if (tabName === 'Recorrentes') {
+    sheet.appendRow(['ID', 'Descrição', 'Valor Estimado', 'Dia Vencimento', 'Tipo', 'Dono', 'Ativo']);
+    sheet.getRange("A1:G1").setFontWeight("bold")
+                            .setBackground("#00a859")
+                            .setFontColor("#ffffff")
+                            .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+  } else if (tabName === 'Recorrentes Recebimentos') {
+    sheet.appendRow(['ID', 'Descrição', 'Valor Estimado', 'Dia Recebimento', 'Dono', 'Ativo']);
+    sheet.getRange("A1:F1").setFontWeight("bold")
+                            .setBackground("#00a859")
+                            .setFontColor("#ffffff")
+                            .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+  }
+  
+  return sheet;
 }
