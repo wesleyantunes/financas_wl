@@ -26,6 +26,9 @@ export interface RawRecurringRule {
   DiaVencimento?: string | number;
   ['Dia Vencimento']?: string | number;
   ['dia vencimento']?: string | number;
+  DiaRecebimento?: string | number;
+  ['Dia Recebimento']?: string | number;
+  ['dia recebimento']?: string | number;
   Tipo?: string;
   tipo?: string;
   Dono?: string;
