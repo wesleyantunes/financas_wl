@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { addExpenses } from '../services/api';
-import { Landmark, Calendar, FileText, Tag, Users, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Landmark, Calendar, FileText, Tag, Users, RefreshCw, AlertCircle, CheckCircle2, CreditCard } from 'lucide-react';
 
 interface ExpenseFormProps {
   url: string;
@@ -20,6 +20,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
   const [isShared, setIsShared] = useState(false);
   const [isInstallment, setIsInstallment] = useState(false);
   const [installments, setInstallments] = useState('2');
+  const [paymentMethod, setPaymentMethod] = useState<'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto'>('Pix');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -101,7 +102,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
             installmentValue,
             selectedTag,
             isShared,
-            installmentGroupId
+            installmentGroupId,
+            paymentMethod
           ]);
         }
       } else {
@@ -113,7 +115,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
           parsedValue,
           selectedTag,
           isShared,
-          "" // Sem ID de parcelamento
+          "", // Sem ID de parcelamento
+          paymentMethod
         ]);
       }
 
@@ -137,6 +140,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
       setIsShared(false);
       setIsInstallment(false);
       setInstallments('2');
+      setPaymentMethod('Pix');
 
       setTimeout(() => {
         setToastMessage('');
@@ -335,6 +339,29 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
               ))}
             </select>
           </div>
+
+          {/* Meio de Pagamento (somente para despesas) */}
+          {entryType === 'expense' && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="expense-payment-method">
+                <CreditCard size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                Meio de Pagamento
+              </label>
+              <select
+                id="expense-payment-method"
+                className="form-control"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as any)}
+                disabled={submitting}
+                style={{ cursor: 'pointer' }}
+              >
+                <option value="Pix">Pix</option>
+                <option value="Cartão Wesley">Cartão Wesley</option>
+                <option value="Cartão Luana">Cartão Luana</option>
+                <option value="Boleto">Boleto</option>
+              </select>
+            </div>
+          )}
 
           {/* Toggles (Compartilhado & Parcelado) */}
           {entryType === 'expense' && (

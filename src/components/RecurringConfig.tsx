@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { addRecurringRule } from '../services/api';
 import { PlusCircle, AlertCircle, Sparkles } from 'lucide-react';
 
@@ -6,9 +6,10 @@ interface RecurringConfigProps {
   url: string;
   token: string;
   onRuleAdded: () => void;
+  mode: 'expense' | 'receivable';
 }
 
-export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, onRuleAdded }) => {
+export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, onRuleAdded, mode }) => {
   const [description, setDescription] = useState('');
   const [estimatedValue, setEstimatedValue] = useState('');
   const [dueDay, setDueDay] = useState('10');
@@ -19,13 +20,21 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    if (mode === 'receivable') {
+      setOwner('Wesley');
+    } else {
+      setOwner('Compartilhado');
+    }
+  }, [mode]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
 
     if (!description.trim()) {
-      setError('Por favor, digite uma descrição para a conta recorrente.');
+      setError(mode === 'expense' ? 'Por favor, digite uma descrição para a conta recorrente.' : 'Por favor, digite uma descrição para o recebimento recorrente.');
       return;
     }
 
@@ -37,33 +46,57 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
 
     const dayNum = parseInt(dueDay);
     if (isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
-      setError('O dia de vencimento deve ser entre 1 e 31.');
+      setError(mode === 'expense' ? 'O dia de vencimento deve ser entre 1 e 31.' : 'O dia de recebimento deve ser entre 1 e 31.');
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const id = `rec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      // Estrutura: ['ID', 'Descrição', 'Valor Estimado', 'Dia Vencimento', 'Tipo', 'Dono', 'Ativo']
-      const rule = [
-        id,
-        description.trim(),
-        valueNum,
-        dayNum,
-        type,
-        owner,
-        true // ativo
-      ];
+      const id = mode === 'expense' 
+        ? `rec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+        : `recrec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      
+      let rule: unknown[];
+      let tabName: string;
 
-      await addRecurringRule(url, token, rule);
+      if (mode === 'expense') {
+        // Estrutura: ['ID', 'Descrição', 'Valor Estimado', 'Dia Vencimento', 'Tipo', 'Dono', 'Ativo']
+        rule = [
+          id,
+          description.trim(),
+          valueNum,
+          dayNum,
+          type,
+          owner,
+          true // ativo
+        ];
+        tabName = 'Recorrentes';
+      } else {
+        // Estrutura: ['ID', 'Descrição', 'Valor Estimado', 'Dia Recebimento', 'Dono', 'Ativo']
+        rule = [
+          id,
+          description.trim(),
+          valueNum,
+          dayNum,
+          owner === 'Compartilhado' ? 'Wesley' : owner,
+          true // ativo
+        ];
+        tabName = 'Recorrentes Recebimentos';
+      }
+
+      await addRecurringRule(url, token, rule, tabName);
 
       setSuccess(true);
       setDescription('');
       setEstimatedValue('');
       setDueDay('10');
       setType('Fixo');
-      setOwner('Compartilhado');
+      if (mode === 'receivable') {
+        setOwner('Wesley');
+      } else {
+        setOwner('Compartilhado');
+      }
 
       // Avisa o pai para atualizar a lista
       onRuleAdded();
@@ -83,7 +116,7 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
     <div className="glass-card" style={{ width: '100%', marginBottom: '24px', backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-glass)' }}>
       <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-title)' }}>
         <PlusCircle size={20} style={{ color: 'var(--color-primary)' }} />
-        Nova Conta Recorrente
+        {mode === 'expense' ? 'Nova Conta Recorrente' : 'Novo Recebimento Recorrente'}
       </h3>
 
       {error && (
@@ -120,7 +153,7 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
           marginBottom: '16px'
         }}>
           <Sparkles size={16} style={{ flexShrink: 0 }} />
-          <span>Regra recorrente salva com sucesso!</span>
+          <span>{mode === 'expense' ? 'Conta recorrente salva com sucesso!' : 'Recebimento recorrente salvo com sucesso!'}</span>
         </div>
       )}
 
@@ -128,11 +161,13 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
         
         {/* Descrição */}
         <div className="form-group" style={{ gridColumn: 'span 2' }}>
-          <label className="form-label">Descrição da Conta</label>
+          <label className="form-label">
+            {mode === 'expense' ? 'Descrição da Conta' : 'Descrição do Recebimento'}
+          </label>
           <input
             type="text"
             className="form-control"
-            placeholder="Ex: Aluguel, Netflix, Água, Academia"
+            placeholder={mode === 'expense' ? "Ex: Aluguel, Netflix, Água, Academia" : "Ex: Salário Wesley, Pró-labore Luana, Rendimentos"}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={submitting}
@@ -154,9 +189,11 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
           />
         </div>
 
-        {/* Dia Vencimento */}
+        {/* Dia Vencimento / Recebimento */}
         <div className="form-group">
-          <label className="form-label">Dia de Vencimento</label>
+          <label className="form-label">
+            {mode === 'expense' ? 'Dia de Vencimento' : 'Dia de Recebimento'}
+          </label>
           <input
             type="number"
             min="1"
@@ -168,30 +205,32 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
           />
         </div>
 
-        {/* Tipo (Fixo / Variável) */}
-        <div className="form-group">
-          <label className="form-label">Tipo de Conta</label>
-          <select
-            className="form-control"
-            value={type}
-            onChange={(e) => setType(e.target.value as 'Fixo' | 'Variável')}
-            disabled={submitting}
-          >
-            <option value="Fixo">Fixo (Valor idêntico todo mês)</option>
-            <option value="Variável">Variável (Valor muda todo mês)</option>
-          </select>
-        </div>
+        {/* Tipo (Fixo / Variável) - Somente para despesas */}
+        {mode === 'expense' && (
+          <div className="form-group">
+            <label className="form-label">Tipo de Conta</label>
+            <select
+              className="form-control"
+              value={type}
+              onChange={(e) => setType(e.target.value as 'Fixo' | 'Variável')}
+              disabled={submitting}
+            >
+              <option value="Fixo">Fixo (Valor idêntico todo mês)</option>
+              <option value="Variável">Variável (Valor muda todo mês)</option>
+            </select>
+          </div>
+        )}
 
         {/* Dono (Wesley / Luana / Compartilhado) */}
-        <div className="form-group">
+        <div className="form-group" style={{ gridColumn: mode === 'receivable' ? 'span 2' : 'auto' }}>
           <label className="form-label font-title">Dono / Responsável</label>
           <select
             className="form-control"
             value={owner}
-            onChange={(e) => setOwner(e.target.value as 'Wesley' | 'Luana' | 'Compartilhado')}
+            onChange={(e) => setOwner(e.target.value as any)}
             disabled={submitting}
           >
-            <option value="Compartilhado">Compartilhado (Casal)</option>
+            {mode === 'expense' && <option value="Compartilhado">Compartilhado (Casal)</option>}
             <option value="Wesley">Wesley (Individual)</option>
             <option value="Luana">Luana (Individual)</option>
           </select>
@@ -200,7 +239,7 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
         {/* Botão de Envio */}
         <div style={{ gridColumn: 'span 2', marginTop: '4px' }}>
           <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Salvando...' : 'Adicionar Conta Recorrente'}
+            {submitting ? 'Salvando...' : mode === 'expense' ? 'Adicionar Conta Recorrente' : 'Adicionar Recebimento Recorrente'}
           </button>
         </div>
 

@@ -11,6 +11,7 @@ interface RecurringPanelProps {
 }
 
 export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, currentUser }) => {
+  const [recurringType, setRecurringType] = useState<'expense' | 'receivable'>('expense');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -22,8 +23,11 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
   const [error, setError] = useState('');
   const [data, setData] = useState<{
     recurring: RawRecurringRule[];
+    recurringReceivables: RawRecurringRule[];
     wesleyExpenses: RawExpense[];
     luanaExpenses: RawExpense[];
+    wesleyReceivables: RawExpense[];
+    luanaReceivables: RawExpense[];
   } | null>(null);
 
   // Modal and Config form toggles
@@ -81,7 +85,13 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
 
   const handleOpenConfirm = (rule: RawRecurringRule) => {
     const [year, monthStr] = selectedMonth.split('-');
-    const dayStr = String(rule.DiaVencimento || rule['Dia Vencimento'] || 10).padStart(2, '0');
+    const dayStr = String(
+      rule.DiaVencimento || 
+      rule['Dia Vencimento'] || 
+      rule.DiaRecebimento || 
+      rule['Dia Recebimento'] || 
+      10
+    ).padStart(2, '0');
     
     setShowConfirmModal(rule);
     setConfirmValue(String(rule.ValorEstimado || rule['Valor Estimado'] || ''));
@@ -102,24 +112,37 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
     setConfirming(true);
 
     try {
-      const id = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const id = recurringType === 'expense'
+        ? `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+        : `rec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const targetUser = showConfirmModal.Dono || showConfirmModal.dono || 'Compartilhado';
       const isShared = targetUser === 'Compartilhado';
       
-      const tabName = `Despesas [${isShared ? currentUser : targetUser}]`;
+      const tabName = recurringType === 'expense'
+        ? `Despesas [${isShared ? currentUser : targetUser}]`
+        : `Recebimentos [${targetUser}]`;
       const ruleTag = 'Recorrentes'; // Tag específica ou herdada
 
-      const expenseRow = [
-        id,
-        confirmDate,
-        confirmDescription,
-        parsedValue,
-        ruleTag,
-        isShared,
-        "" // Sem parcelamento
-      ];
+      const row = recurringType === 'expense'
+        ? [
+            id,
+            confirmDate,
+            confirmDescription,
+            parsedValue,
+            ruleTag,
+            isShared,
+            "", // Sem parcelamento
+            "Pix" // Meio de pagamento padrão para recorrentes
+          ]
+        : [
+            id,
+            confirmDate,
+            confirmDescription,
+            parsedValue,
+            ruleTag
+          ];
 
-      await addExpenses(url, token, tabName, [expenseRow]);
+      await addExpenses(url, token, tabName, [row]);
 
       // Fechar modal e atualizar dados
       setShowConfirmModal(null);
@@ -132,42 +155,78 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
     }
   };
 
-  // Conciliate local rules with actual month expenses
+  // Conciliate local rules with actual month expenses/receivables
   const allExpenses = [
     ...(data?.wesleyExpenses || []),
     ...(data?.luanaExpenses || [])
   ];
+  const allReceivables = [
+    ...(data?.wesleyReceivables || []),
+    ...(data?.luanaReceivables || [])
+  ];
 
   const matchedExpenseIds = new Set<string>();
-  const conciliatedRules = data?.recurring.map(rule => {
-    const ruleDesc = (rule.Descrição || rule.desc || '').toLowerCase().trim();
-    if (!ruleDesc) {
-      return {
-        rule,
-        isPaid: false,
-        expense: undefined
-      };
-    }
-    
-    // Find matching transaction
-    const matchedExpense = allExpenses.find(exp => {
-      const expId = exp.ID || exp.id || '';
-      if (matchedExpenseIds.has(expId)) return false;
-      
-      const expDesc = (exp.Descrição || exp.desc || '').toLowerCase().trim();
-      return expDesc.includes(ruleDesc);
-    });
+  const matchedReceivableIds = new Set<string>();
 
-    if (matchedExpense) {
-      matchedExpenseIds.add(matchedExpense.ID || matchedExpense.id || '');
-    }
+  const conciliatedRules = recurringType === 'expense'
+    ? (data?.recurring || []).map(rule => {
+        const ruleDesc = (rule.Descrição || rule.desc || '').toLowerCase().trim();
+        if (!ruleDesc) {
+          return {
+            rule,
+            isPaid: false,
+            expense: undefined
+          };
+        }
+        
+        // Find matching transaction
+        const matchedExpense = allExpenses.find(exp => {
+          const expId = exp.ID || exp.id || '';
+          if (matchedExpenseIds.has(expId)) return false;
+          
+          const expDesc = (exp.Descrição || exp.desc || '').toLowerCase().trim();
+          return expDesc.includes(ruleDesc);
+        });
 
-    return {
-      rule,
-      isPaid: !!matchedExpense,
-      expense: matchedExpense
-    };
-  }) || [];
+        if (matchedExpense) {
+          matchedExpenseIds.add(matchedExpense.ID || matchedExpense.id || '');
+        }
+
+        return {
+          rule,
+          isPaid: !!matchedExpense,
+          expense: matchedExpense
+        };
+      })
+    : (data?.recurringReceivables || []).map(rule => {
+        const ruleDesc = (rule.Descrição || rule.desc || '').toLowerCase().trim();
+        if (!ruleDesc) {
+          return {
+            rule,
+            isPaid: false,
+            expense: undefined
+          };
+        }
+        
+        // Find matching transaction
+        const matchedReceivable = allReceivables.find(rec => {
+          const recId = rec.ID || rec.id || '';
+          if (matchedReceivableIds.has(recId)) return false;
+          
+          const recDesc = (rec.Descrição || rec.desc || '').toLowerCase().trim();
+          return recDesc.includes(ruleDesc);
+        });
+
+        if (matchedReceivable) {
+          matchedReceivableIds.add(matchedReceivable.ID || matchedReceivable.id || '');
+        }
+
+        return {
+          rule,
+          isPaid: !!matchedReceivable,
+          expense: matchedReceivable
+        };
+      });
 
   const pendingRules = conciliatedRules.filter(r => !r.isPaid);
 
@@ -219,7 +278,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
             )}
             {paid.length > 0 && (
               <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '12px', background: 'var(--color-primary-glow)', color: 'var(--color-primary)', fontWeight: 'bold' }}>
-                {paid.length} paga{paid.length > 1 ? 's' : ''}
+                {paid.length} {recurringType === 'expense' ? 'paga' : 'recebida'}{paid.length > 1 ? 's' : ''}
               </span>
             )}
           </div>
@@ -234,7 +293,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {pending.map(({ rule }) => {
                 const estimatedVal = rule.ValorEstimado || rule['Valor Estimado'] || 0;
-                const dayVal = rule.DiaVencimento || rule['Dia Vencimento'] || 10;
+                const dayVal = rule.DiaVencimento || rule['Dia Vencimento'] || rule.DiaRecebimento || rule['Dia Recebimento'] || 10;
                 const isVar = (rule.Tipo || rule.tipo) === 'Variável';
 
                 return (
@@ -250,7 +309,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
                     <div style={{ textAlign: 'left' }}>
                       <strong style={{ display: 'block', color: 'var(--text-title)' }}>{rule.Descrição || rule.desc}</strong>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        Vence dia {dayVal} {isVar && <span style={{ color: 'var(--color-warning)' }}>(Variável)</span>}
+                        {recurringType === 'expense' ? 'Vence dia' : 'Recebe dia'} {dayVal} {recurringType === 'expense' && isVar && <span style={{ color: 'var(--color-warning)' }}>(Variável)</span>}
                       </span>
                     </div>
 
@@ -273,11 +332,11 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
           </div>
         )}
 
-        {/* Pagas Subsection */}
+        {/* Pagas/Recebidas Subsection */}
         {paid.length > 0 && (
           <div>
             <h4 style={{ fontSize: '0.8rem', color: 'var(--color-primary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Pagas
+              {recurringType === 'expense' ? 'Pagas' : 'Recebidos'}
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {paid.map(({ rule, expense }) => {
@@ -302,7 +361,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
                         {rule.Descrição || rule.desc}
                       </strong>
                       <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Check size={12} /> Pago em {formattedDate}
+                        <Check size={12} /> {recurringType === 'expense' ? 'Pago em' : 'Recebido em'} {formattedDate}
                       </span>
                     </div>
 
@@ -330,6 +389,60 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
   return (
     <div style={{ width: '100%', maxWidth: '720px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
+      {/* Outer Type Switcher (Despesas vs Recebimentos) */}
+      <div style={{
+        display: 'flex',
+        backgroundColor: 'var(--bg-secondary)',
+        borderRadius: '8px',
+        padding: '4px',
+        border: '1px solid var(--border-glass)'
+      }}>
+        <button
+          type="button"
+          onClick={() => {
+            setRecurringType('expense');
+            setActiveTab('Todos');
+          }}
+          style={{
+            flex: 1,
+            padding: '10px 16px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: recurringType === 'expense' ? 'var(--color-primary)' : 'transparent',
+            color: recurringType === 'expense' ? 'hsl(140, 10%, 4%)' : 'var(--text-muted)',
+            fontWeight: '600',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            textAlign: 'center'
+          }}
+        >
+          Despesas Recorrentes
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setRecurringType('receivable');
+            setActiveTab('Todos');
+          }}
+          style={{
+            flex: 1,
+            padding: '10px 16px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: recurringType === 'receivable' ? 'var(--color-primary)' : 'transparent',
+            color: recurringType === 'receivable' ? 'hsl(140, 10%, 4%)' : 'var(--text-muted)',
+            fontWeight: '600',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            textAlign: 'center'
+          }}
+        >
+          Recebimentos Recorrentes
+        </button>
+      </div>
+
       {/* Month Selector Header */}
       <div className="glass-card" style={{
         display: 'flex',
@@ -382,7 +495,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
 
       {/* Settings / Config Form */}
       {showConfig ? (
-        <RecurringConfig url={url} token={token} onRuleAdded={fetchMonthData} />
+        <RecurringConfig url={url} token={token} onRuleAdded={fetchMonthData} mode={recurringType} />
       ) : (
         <>
           {/* Tabs switch (shows only when not in settings) */}
@@ -396,7 +509,10 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
               padding: '6px',
               marginBottom: '8px'
             }}>
-              {(['Todos', 'Compartilhado', 'Wesley', 'Luana'] as const).map(tab => {
+              {(recurringType === 'expense'
+                ? (['Todos', 'Compartilhado', 'Wesley', 'Luana'] as const)
+                : (['Todos', 'Wesley', 'Luana'] as const)
+              ).map(tab => {
                 const isActive = activeTab === tab;
                 const count = tab === 'Todos'
                   ? pendingRules.length
@@ -457,29 +573,31 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
               {activeTab === 'Todos' && conciliatedRules.length === 0 && (
                 <div className="glass-card" style={{ padding: '40px 20px', textAlign: 'center' }}>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                    Nenhuma conta recorrente cadastrada para este mês.
+                    {recurringType === 'expense'
+                      ? 'Nenhuma conta recorrente cadastrada para este mês.'
+                      : 'Nenhum recebimento recorrente cadastrado para este mês.'}
                   </p>
                 </div>
               )}
 
               {activeTab === 'Todos' && (
                 <>
-                  {renderCategorySection('Contas Compartilhadas', rulesShared, 'Nenhuma conta compartilhada registrada.')}
-                  {renderCategorySection('Contas de Wesley', rulesWesley, 'Nenhuma conta de Wesley registrada.')}
-                  {renderCategorySection('Contas de Luana', rulesLuana, 'Nenhuma conta de Luana registrada.')}
+                  {recurringType === 'expense' && renderCategorySection('Contas Compartilhadas', rulesShared, 'Nenhuma conta compartilhada registrada.')}
+                  {renderCategorySection(recurringType === 'expense' ? 'Contas de Wesley' : 'Recebimentos de Wesley', rulesWesley, recurringType === 'expense' ? 'Nenhuma conta de Wesley registrada.' : 'Nenhum recebimento de Wesley registrado.')}
+                  {renderCategorySection(recurringType === 'expense' ? 'Contas de Luana' : 'Recebimentos de Luana', rulesLuana, recurringType === 'expense' ? 'Nenhuma conta de Luana registrada.' : 'Nenhum recebimento de Luana registrado.')}
                 </>
               )}
 
-              {activeTab === 'Compartilhado' && (
+              {activeTab === 'Compartilhado' && recurringType === 'expense' && (
                 renderCategorySection('Contas Compartilhadas', rulesShared, 'Nenhuma conta compartilhada registrada.', true)
               )}
 
               {activeTab === 'Wesley' && (
-                renderCategorySection('Contas de Wesley', rulesWesley, 'Nenhuma conta de Wesley registrada.', true)
+                renderCategorySection(recurringType === 'expense' ? 'Contas de Wesley' : 'Recebimentos de Wesley', rulesWesley, recurringType === 'expense' ? 'Nenhuma conta de Wesley registrada.' : 'Nenhum recebimento de Wesley registrado.', true)
               )}
 
               {activeTab === 'Luana' && (
-                renderCategorySection('Contas de Luana', rulesLuana, 'Nenhuma conta de Luana registrada.', true)
+                renderCategorySection(recurringType === 'expense' ? 'Contas de Luana' : 'Recebimentos de Luana', rulesLuana, recurringType === 'expense' ? 'Nenhuma conta de Luana registrada.' : 'Nenhum recebimento de Luana registrado.', true)
               )}
             </div>
           )}
@@ -502,9 +620,11 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
           zIndex: 2000
         }}>
           <div className="glass-card" style={{ width: '90%', maxWidth: '420px', padding: '28px', backgroundColor: 'var(--bg-secondary)' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Confirmar Pagamento</h3>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>
+              {recurringType === 'expense' ? 'Confirmar Pagamento' : 'Confirmar Recebimento'}
+            </h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
-              Ajuste os dados reais da conta <strong>{showConfirmModal.Descrição || showConfirmModal.desc}</strong>
+              Ajuste os dados reais {recurringType === 'expense' ? 'da conta' : 'do recebimento'} <strong>{showConfirmModal.Descrição || showConfirmModal.desc}</strong>
             </p>
 
             <form onSubmit={handleConfirmPayment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -521,7 +641,9 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
               </div>
 
               <div className="form-group">
-                <label className="form-label">Valor Real Pago (R$)</label>
+                <label className="form-label">
+                  {recurringType === 'expense' ? 'Valor Real Pago (R$)' : 'Valor Real Recebido (R$)'}
+                </label>
                 <input
                   type="number"
                   step="0.01"
@@ -535,7 +657,9 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
               </div>
 
               <div className="form-group">
-                <label className="form-label">Data de Pagamento</label>
+                <label className="form-label">
+                  {recurringType === 'expense' ? 'Data de Pagamento' : 'Data de Recebimento'}
+                </label>
                 <input
                   type="date"
                   className="form-control"
