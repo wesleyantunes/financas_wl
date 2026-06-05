@@ -36,10 +36,11 @@ interface NormalizedExpense {
   isShared: boolean;
   installmentGroupId: string;
   owner: 'Wesley' | 'Luana';
+  paymentMethod: string;
   raw: RawExpense;
 }
 
-const DEFAULT_TAGS = ['Alimentação', 'Lazer', 'Transporte', 'Saúde', 'Moradia', 'Educação', 'Supermercado', 'Outros'];
+const DEFAULT_TAGS = ['Alimentação', 'Lazer', 'Transporte', 'Saúde', 'Moradia', 'Educação', 'Supermercado', 'Pets', 'Outros'];
 
 export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -66,6 +67,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
   const [editDate, setEditDate] = useState('');
   const [editTag, setEditTag] = useState('');
   const [editIsShared, setEditIsShared] = useState(false);
+  const [editPaymentMethod, setEditPaymentMethod] = useState<'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto'>('Pix');
   const [editApplyFuture, setEditApplyFuture] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -101,6 +103,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
             }
           }
           
+          const meioPagamento = isExpenseType ? (exp['Meio de Pagamento'] || exp.meioPagamento || 'Pix') : '';
+
           return {
             id: exp.ID || exp.id || '',
             date: dateStr,
@@ -110,6 +114,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
             isShared,
             installmentGroupId: isExpenseType ? (exp['ID Parcelamento'] || '') : '',
             owner,
+            paymentMethod: meioPagamento,
             raw: exp
           };
         });
@@ -180,6 +185,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
     setEditDate(exp.date);
     setEditTag(exp.tag);
     setEditIsShared(exp.isShared);
+    setEditPaymentMethod((exp.paymentMethod || 'Pix') as any);
     setEditApplyFuture(false);
   };
 
@@ -216,14 +222,16 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
             Descrição: editDescription.trim(),
             Valor: parsedVal,
             Tag: editTag,
-            Compartilhado: editIsShared
+            Compartilhado: editIsShared,
+            ['Meio de Pagamento']: editPaymentMethod,
+            meioPagamento: editPaymentMethod
           }
         );
       } else {
         // Atualização individual
         let expenseArray: unknown[];
         if (isExpense) {
-          // Formato da linha de Despesa: [id, date, description, value, tag, isShared, installmentGroupId]
+          // Formato da linha de Despesa: [id, date, description, value, tag, isShared, installmentGroupId, paymentMethod]
           const descriptionField = editingExpense.installmentGroupId 
             ? (editingExpense.description.match(/\((\d{2}\/\d{2})\)$/) 
                 ? `${editDescription.trim()} (${editingExpense.description.match(/\((\d{2}\/\d{2})\)$/)?.[1]})`
@@ -237,7 +245,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
             parsedVal,
             editTag,
             editIsShared,
-            editingExpense.installmentGroupId
+            editingExpense.installmentGroupId,
+            editPaymentMethod
           ];
         } else {
           // Formato da linha de Recebimento: [id, date, description, value, tag]
@@ -550,6 +559,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Dono</th>
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Descrição</th>
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Categoria</th>
+                {viewTab === 'expenses' && <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Pagamento</th>}
                 {viewTab === 'expenses' && <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>Tipo</th>}
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, textAlign: 'right' }}>Valor</th>
                 <th style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center', width: '100px' }}>Ações</th>
@@ -599,6 +609,13 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
                       </span>
                     </td>
                     
+                    {/* Payment Method */}
+                    {viewTab === 'expenses' && (
+                      <td style={{ padding: '12px 8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        {exp.paymentMethod || 'Pix'}
+                      </td>
+                    )}
+
                     {/* Shared vs Individual */}
                     {viewTab === 'expenses' && (
                       <td style={{ padding: '12px 8px' }}>
@@ -746,6 +763,24 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
                   ))}
                 </select>
               </div>
+
+              {/* Meio de Pagamento (somente para despesas) */}
+              {viewTab === 'expenses' && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Meio de Pagamento</label>
+                  <select
+                    className="form-control"
+                    value={editPaymentMethod}
+                    onChange={(e) => setEditPaymentMethod(e.target.value as any)}
+                    disabled={saving}
+                  >
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão Wesley">Cartão Wesley</option>
+                    <option value="Cartão Luana">Cartão Luana</option>
+                    <option value="Boleto">Boleto</option>
+                  </select>
+                </div>
+              )}
 
               {/* Compartilhado */}
               {viewTab === 'expenses' && (

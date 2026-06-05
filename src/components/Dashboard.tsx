@@ -57,6 +57,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
   const [error, setError] = useState('');
   const [data, setData] = useState<{
     recurring: RawRecurringRule[];
+    recurringReceivables: RawRecurringRule[];
     wesleyExpenses: RawExpense[];
     luanaExpenses: RawExpense[];
     wesleyReceivables: RawExpense[];
@@ -120,7 +121,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
   };
 
   // Helper para normalizar despesas
-  const parseExpenses = (rawList: RawExpense[]) => {
+  const parseExpenses = (rawList: RawExpense[], listOwner: 'Wesley' | 'Luana') => {
     return (rawList || []).map(exp => {
       const valRaw = exp.Valor !== undefined ? exp.Valor : exp.valor;
       const valor = typeof valRaw === 'number' ? valRaw : parseFloat(String(valRaw || 0)) || 0;
@@ -143,13 +144,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
           }
         }
       }
+
+      // Detect payment method (Meio de Pagamento)
+      const meioPagamento = exp['Meio de Pagamento'] || exp.meioPagamento || 'Pix';
+
+      // Decide who physically paid:
+      let paidBy: 'Wesley' | 'Luana' = listOwner;
+      if (meioPagamento === 'Cartão Wesley') {
+        paidBy = 'Wesley';
+      } else if (meioPagamento === 'Cartão Luana') {
+        paidBy = 'Luana';
+      }
+
       return {
         id: exp.ID || exp.id || '',
         description: exp.Descrição || exp.desc || 'Sem descrição',
         value: valor,
         tag: exp.Tag || exp.tag || 'Outros',
         isShared,
-        day
+        day,
+        paymentMethod: meioPagamento,
+        paidBy,
+        listOwner
       };
     });
   };
@@ -168,23 +184,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
     });
   };
 
-  const wesleyList = parseExpenses(data?.wesleyExpenses || []);
-  const luanaList = parseExpenses(data?.luanaExpenses || []);
+  const wesleyList = parseExpenses(data?.wesleyExpenses || [], 'Wesley');
+  const luanaList = parseExpenses(data?.luanaExpenses || [], 'Luana');
   const allExpenses = [...wesleyList, ...luanaList];
 
   const wesleyReceivablesList = parseReceivables(data?.wesleyReceivables || []);
   const luanaReceivablesList = parseReceivables(data?.luanaReceivables || []);
 
   // Cálculos Financeiros
-  const wesleyPaid = wesleyList.reduce((acc, curr) => acc + curr.value, 0);
-  const luanaPaid = luanaList.reduce((acc, curr) => acc + curr.value, 0);
+  const wesleyPaid = allExpenses.reduce((acc, curr) => acc + (curr.paidBy === 'Wesley' ? curr.value : 0), 0);
+  const luanaPaid = allExpenses.reduce((acc, curr) => acc + (curr.paidBy === 'Luana' ? curr.value : 0), 0);
   const totalPaid = wesleyPaid + luanaPaid;
 
-  const wesleyIndividual = wesleyList.reduce((acc, curr) => acc + (curr.isShared ? 0 : curr.value), 0);
-  const luanaIndividual = luanaList.reduce((acc, curr) => acc + (curr.isShared ? 0 : curr.value), 0);
+  const wesleyIndividual = allExpenses.reduce((acc, curr) => acc + (curr.listOwner === 'Wesley' && !curr.isShared ? curr.value : 0), 0);
+  const luanaIndividual = allExpenses.reduce((acc, curr) => acc + (curr.listOwner === 'Luana' && !curr.isShared ? curr.value : 0), 0);
   
-  const wesleySharedPaid = wesleyList.reduce((acc, curr) => acc + (curr.isShared ? curr.value : 0), 0);
-  const luanaSharedPaid = luanaList.reduce((acc, curr) => acc + (curr.isShared ? curr.value : 0), 0);
+  const wesleySharedPaid = allExpenses.reduce((acc, curr) => acc + (curr.listOwner === 'Wesley' && curr.isShared ? curr.value : 0), 0);
+  const luanaSharedPaid = allExpenses.reduce((acc, curr) => acc + (curr.listOwner === 'Luana' && curr.isShared ? curr.value : 0), 0);
   const totalShared = wesleySharedPaid + luanaSharedPaid;
 
   // Gasto justo = Gasto Individual + Metade de tudo que foi compartilhado
@@ -202,6 +218,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
   const wesleySavings = wesleyIncome - wesleyFairShare;
   const luanaSavings = luanaIncome - luanaFairShare;
   const totalSavings = totalIncome - totalPaid;
+
+  // --- Lógica de Projeção ---
+  // 1. Despesas recorrentes pendentes
+  const matchedExpenseIds = new Set<string>();
+  const pendingExpensesList = (data?.recurring || []).filter(rule => {
+    const ruleDesc = (rule.Descrição || rule.desc || '').toLowerCase().trim();
+    if (!ruleDesc) return true;
+
+    const matchedExpense = allExpenses.find(exp => {
+      if (matchedExpenseIds.has(exp.id)) return false;
+      const expDesc = exp.description.toLowerCase().trim();
+      return expDesc.includes(ruleDesc);
+    });
+
+    if (matchedExpense) {
+      matchedExpenseIds.add(matchedExpense.id);
+      return false;
+    }
+    return true;
+  });
+
+  const pendingExpensesSum = pendingExpensesList.reduce((acc, rule) => {
+    const valRaw = rule.ValorEstimado || rule['Valor Estimado'] || 0;
+    return acc + (typeof valRaw === 'number' ? valRaw : parseFloat(String(valRaw)) || 0);
+  }, 0);
+
+  // 2. Recebimentos recorrentes pendentes
+  const matchedReceivableIds = new Set<string>();
+  const allReceivablesList = [...wesleyReceivablesList, ...luanaReceivablesList];
+  const pendingReceivablesList = (data?.recurringReceivables || []).filter(rule => {
+    const ruleDesc = (rule.Descrição || rule.desc || '').toLowerCase().trim();
+    if (!ruleDesc) return true;
+
+    const matchedReceivable = allReceivablesList.find(rec => {
+      if (matchedReceivableIds.has(rec.id)) return false;
+      const recDesc = rec.description.toLowerCase().trim();
+      return recDesc.includes(ruleDesc);
+    });
+
+    if (matchedReceivable) {
+      matchedReceivableIds.add(rec.id);
+      return false;
+    }
+    return true;
+  });
+
+  const pendingReceivablesSum = pendingReceivablesList.reduce((acc, rule) => {
+    const valRaw = rule.ValorEstimado || rule['Valor Estimado'] || 0;
+    return acc + (typeof valRaw === 'number' ? valRaw : parseFloat(String(valRaw)) || 0);
+  }, 0);
 
   // 1. Gráfico de Pizza (Por Categoria/Tag)
   const tagGroup: Record<string, number> = {};
@@ -232,7 +298,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
   ];
 
   // 3. Evolução Diária Acumulada
-  // Calcula a quantidade de dias no mês selecionado
   const [yearNum, monthNum] = selectedMonth.split('-').map(Number);
   const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
 
@@ -339,6 +404,64 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
+          {/* Seção de Projeção de Fluxo de Caixa */}
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '-8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Calendar size={20} style={{ color: 'var(--color-primary)' }} />
+            Previsão e Fluxo de Caixa Projetado
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            {/* Saldo Final Projetado */}
+            <div className="glass-card" style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '8px', 
+              padding: '20px',
+              border: '1px solid var(--border-active)',
+              background: 'linear-gradient(135deg, rgba(0, 219, 117, 0.05) 0%, rgba(10, 10, 10, 0.2) 100%)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>SALDO FINAL PREVISTO</span>
+                <DollarSign size={18} style={{ color: 'var(--color-primary)' }} />
+              </div>
+              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: (totalIncome + pendingReceivablesSum - (totalPaid + pendingExpensesSum)) >= 0 ? 'var(--color-primary)' : 'var(--color-danger)' }}>
+                {formatBRL(totalIncome + pendingReceivablesSum - (totalPaid + pendingExpensesSum))}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Saldo final estimado (Lançado + Pendentes Recorrentes)
+              </div>
+            </div>
+
+            {/* Receitas Previstas */}
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>RECEITA PREVISTA TOTAL</span>
+                <span style={{ color: 'var(--color-primary)', fontSize: '0.75rem', fontWeight: '700' }}>+{formatBRL(totalIncome + pendingReceivablesSum)}</span>
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-title)' }}>
+                {formatBRL(totalIncome + pendingReceivablesSum)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Realizado: {formatBRL(totalIncome)}</span>
+                <span>Pendente: {formatBRL(pendingReceivablesSum)}</span>
+              </div>
+            </div>
+
+            {/* Despesas Previstas */}
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.5px' }}>DESPESA PREVISTA TOTAL</span>
+                <span style={{ color: 'var(--color-danger)', fontSize: '0.75rem', fontWeight: '700' }}>-{formatBRL(totalPaid + pendingExpensesSum)}</span>
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--text-title)' }}>
+                {formatBRL(totalPaid + pendingExpensesSum)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Realizado: {formatBRL(totalPaid)}</span>
+                <span>Pendente: {formatBRL(pendingExpensesSum)}</span>
+              </div>
+            </div>
+          </div>
+
           {/* Seção Poupança e Recebimentos */}
           <h3 style={{ fontSize: '1.1rem', marginBottom: '-8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <DollarSign size={20} style={{ color: 'var(--color-primary)' }} />
