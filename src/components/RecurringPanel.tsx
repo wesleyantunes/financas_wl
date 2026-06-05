@@ -36,6 +36,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
   const [confirmValue, setConfirmValue] = useState('');
   const [confirmDate, setConfirmDate] = useState('');
   const [confirmDescription, setConfirmDescription] = useState('');
+  const [confirmPaymentMethod, setConfirmPaymentMethod] = useState<'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto'>('Pix');
   const [confirming, setConfirming] = useState(false);
   const [activeTab, setActiveTab] = useState<'Todos' | 'Wesley' | 'Luana' | 'Compartilhado'>('Todos');
 
@@ -97,6 +98,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
     setConfirmValue(String(rule.ValorEstimado || rule['Valor Estimado'] || ''));
     setConfirmDescription(rule.Descrição || rule.desc || '');
     setConfirmDate(`${year}-${monthStr}-${dayStr}`);
+    setConfirmPaymentMethod('Pix');
   };
 
   const handleConfirmPayment = async (e: React.FormEvent) => {
@@ -132,7 +134,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
             ruleTag,
             isShared,
             "", // Sem parcelamento
-            "Pix" // Meio de pagamento padrão para recorrentes
+            confirmPaymentMethod // Meio de pagamento selecionado pelo usuário
           ]
         : [
             id,
@@ -669,6 +671,23 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
                   required
                 />
               </div>
+ 
+              {recurringType === 'expense' && (
+                <div className="form-group">
+                  <label className="form-label">Meio de Pagamento</label>
+                  <select
+                    className="form-control"
+                    value={confirmPaymentMethod}
+                    onChange={(e) => setConfirmPaymentMethod(e.target.value as 'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto')}
+                    disabled={confirming}
+                  >
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão Wesley">Cartão Wesley</option>
+                    <option value="Cartão Luana">Cartão Luana</option>
+                    <option value="Boleto">Boleto</option>
+                  </select>
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                 <button 
