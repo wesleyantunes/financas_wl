@@ -7,18 +7,18 @@ updated: 2026-06-05T01:48:22Z
 ## Current Position
 
 **Milestone:** v1.0
-**Phase:** 8 (completed)
+**Phase:** 9 (completed)
 **Task:** All tasks complete
 **Status:** Verified
 **Plan:** —
 
 ## Last Action
 
-Executada a Fase 8. Implementada a coluna de "Meio de Pagamento" (Pix, Cartão Wesley, Cartão Luana, Boleto) no Sheets e suporte no frontend (ExpenseForm, HistoryPanel, Dashboard e RecurringPanel) junto com previsão de recebimentos recorrentes e fluxo de caixa projetado.
+Executada a Fase 9. Implementado o painel dedicado "Cartões" para gerenciar as faturas do Cartão Wesley e Cartão Luana. Adicionado o breakdown de gastos, visualização detalhada de transações com suporte a edição/exclusão de parcelados e formulário integrado de lançamento rápido com definição automática da data no 1º dia do mês visualizado.
 
 ## Next Steps
 
-1. Nenhuma próxima fase restante no ROADMAP. v1.0 finalizado!
+1. Apresentar o resultado final ao usuário e solicitar feedback.
 
 ## Active Decisions
 

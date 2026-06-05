@@ -117,6 +117,17 @@
 
 ---
 
+### Phase 9: Gestão de Faturas de Cartão de Crédito
+**Status:** ✅ Complete
+**Objective:** Desenvolver um painel dedicado ("Cartões") para visualizar a fatura detalhada do Cartão Wesley e Cartão Luana para o mês selecionado, listando as despesas físicas imputadas a cada cartão e permitindo lançar despesas de forma direta com o meio de pagamento pré-selecionado.
+**Depends on:** Phase 8
+**Requirements:** REQ-17
+
+**Plans:**
+- [x] Plan 9.1: Criar o componente CardInvoicePanel, integrar com a barra de abas e implementar lançamentos rápidos e parcelados na fatura.
+
+---
+
 ## Progress Summary
 
 | Phase | Status | Plans | Complete |
@@ -129,6 +140,7 @@
 | 6     | ✅      | 1/1   | 2026-06-02 |
 | 7     | ✅      | 1/1   | 2026-06-03 |
 | 8     | ✅      | 1/1   | 2026-06-05 |
+| 9     | ✅      | 1/1   | 2026-06-05 |
 
 ---
 
@@ -144,3 +156,4 @@
 | 6     | 2026-06-02 | 2026-06-02 | < 1 dia  |
 | 7     | 2026-06-03 | 2026-06-03 | < 1 dia  |
 | 8     | 2026-06-05 | 2026-06-05 | < 1 dia  |
+| 9     | 2026-06-05 | 2026-06-05 | < 1 dia  |

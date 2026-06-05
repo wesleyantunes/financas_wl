@@ -4,8 +4,9 @@ import { ExpenseForm } from './components/ExpenseForm';
 import { RecurringPanel } from './components/RecurringPanel';
 import { Dashboard } from './components/Dashboard';
 import { HistoryPanel } from './components/HistoryPanel';
+import { CardInvoicePanel } from './components/CardInvoicePanel';
 import { testConnection, initializeSpreadsheet } from './services/api';
-import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link } from 'lucide-react';
+import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link, CreditCard } from 'lucide-react';
 
 function App() {
   const [initialCreds] = useState(() => {
@@ -33,7 +34,7 @@ function App() {
     const savedUser = localStorage.getItem('finance_active_user');
     return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'recurring' | 'history'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'recurring' | 'history'>('dashboard');
 
   const handleConnect = async (url: string, token: string) => {
     // 1. Testa a conexão (Ping)
@@ -208,6 +209,14 @@ function App() {
           />
         )}
 
+        {activeTab === 'cards' && (
+          <CardInvoicePanel
+            url={appUrl}
+            token={secretToken}
+            currentUser={currentUser}
+          />
+        )}
+
         {activeTab === 'history' && (
           <HistoryPanel
             url={appUrl}
@@ -272,6 +281,26 @@ function App() {
           >
             <PlusCircle size={20} />
             Lançar
+          </button>
+
+          <button
+            onClick={() => setActiveTab('cards')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'cards' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'cards' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <CreditCard size={20} />
+            Cartões
           </button>
 
           <button
