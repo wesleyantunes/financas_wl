@@ -11,6 +11,8 @@ export interface RawExpense {
   tag?: string;
   Compartilhado?: boolean | string;
   ['ID Parcelamento']?: string;
+  ['Meio de Pagamento']?: string;
+  meioPagamento?: string;
 }
 
 export interface RawRecurringRule {
@@ -117,9 +119,10 @@ export async function addExpenses(
 export async function addRecurringRule(
   url: string, 
   token: string, 
-  rule: unknown[]
+  rule: unknown[],
+  tabName: string = 'Recorrentes'
 ): Promise<unknown> {
-  return await request(url, token, 'addRecurringRule', { rule });
+  return await request(url, token, 'addRecurringRule', { rule, tabName });
 }
 
 /**
@@ -132,6 +135,7 @@ export async function getMonthData(
 ): Promise<{
   success: boolean;
   recurring: RawRecurringRule[];
+  recurringReceivables: RawRecurringRule[];
   wesleyExpenses: RawExpense[];
   luanaExpenses: RawExpense[];
   wesleyReceivables: RawExpense[];
@@ -140,6 +144,7 @@ export async function getMonthData(
   return await request<{
     success: boolean;
     recurring: RawRecurringRule[];
+    recurringReceivables: RawRecurringRule[];
     wesleyExpenses: RawExpense[];
     luanaExpenses: RawExpense[];
     wesleyReceivables: RawExpense[];
@@ -199,6 +204,8 @@ export async function updateInstallments(
     Valor?: number;
     Tag?: string;
     Compartilhado?: boolean;
+    ['Meio de Pagamento']?: string;
+    meioPagamento?: string;
   }
 ): Promise<unknown> {
   return await request(url, token, 'updateInstallments', { tabName, installmentGroupId, baseDate, updatedFields });

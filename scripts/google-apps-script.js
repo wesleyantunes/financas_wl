@@ -48,7 +48,7 @@ function doPost(e) {
     
     // Ação: Inicializar Abas da Planilha
     if (action === 'initialize') {
-      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]'];
+      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]', 'Recorrentes Recebimentos'];
       const results = {};
       
       activeTabs.forEach(tabName => {
@@ -58,10 +58,10 @@ function doPost(e) {
           
           if (tabName.startsWith('Despesas')) {
             // Estrutura das abas de despesas
-            sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag', 'Compartilhado', 'ID Parcelamento']);
+            sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag', 'Compartilhado', 'ID Parcelamento', 'Meio de Pagamento']);
             
             // Estilização do cabeçalho (Verde Sicredi)
-            sheet.getRange("A1:G1").setFontWeight("bold")
+            sheet.getRange("A1:H1").setFontWeight("bold")
                                     .setBackground("#00a859")
                                     .setFontColor("#ffffff")
                                     .setHorizontalAlignment("center");
@@ -90,9 +90,34 @@ function doPost(e) {
             sheet.appendRow(['rec_ex1', 'Netflix', 55.90, 10, 'Fixo', 'Compartilhado', true]);
             sheet.appendRow(['rec_ex2', 'Energia Elétrica', 200.00, 15, 'Variável', 'Compartilhado', true]);
             sheet.appendRow(['rec_ex3', 'Água', 80.00, 20, 'Variável', 'Compartilhado', true]);
+          } else if (tabName === 'Recorrentes Recebimentos') {
+            // Estrutura da aba de recorrentes recebimentos
+            sheet.appendRow(['ID', 'Descrição', 'Valor Estimado', 'Dia Recebimento', 'Dono', 'Ativo']);
+            
+            sheet.getRange("A1:F1").setFontWeight("bold")
+                                    .setBackground("#00a859")
+                                    .setFontColor("#ffffff")
+                                    .setHorizontalAlignment("center");
+            sheet.setFrozenRows(1);
+            
+            // Exemplos úteis
+            sheet.appendRow(['recrec_ex1', 'Salário Wesley', 5000.00, 5, 'Wesley', true]);
+            sheet.appendRow(['recrec_ex2', 'Pró-labore Luana', 4000.00, 10, 'Luana', true]);
           }
           results[tabName] = 'Criada';
         } else {
+          // Se a aba já existe, garantir que os cabeçalhos das despesas tenham Meio de Pagamento
+          if (tabName.startsWith('Despesas')) {
+            const range = sheet.getRange("A1:H1");
+            const values = range.getValues()[0];
+            if (values[7] !== 'Meio de Pagamento') {
+              sheet.getRange("H1").setValue('Meio de Pagamento');
+              sheet.getRange("A1:H1").setFontWeight("bold")
+                                      .setBackground("#00a859")
+                                      .setFontColor("#ffffff")
+                                      .setHorizontalAlignment("center");
+            }
+          }
           results[tabName] = 'Já existe';
         }
       });
@@ -132,15 +157,16 @@ function doPost(e) {
 
     // Ação: Adicionar Regra Recorrente
     if (action === 'addRecurringRule') {
-      const rule = requestData.rule; // Array de valores: [id, descricao, valorEstimado, diaVencimento, tipo, dono, ativo]
+      const rule = requestData.rule; // Array de valores: [id, descricao, valorEstimado, diaVencimento, tipo, dono, ativo] ou similar
+      const tabName = requestData.tabName || 'Recorrentes';
       
       if (!rule || !rule.length) {
         return createJsonResponse({ success: false, error: 'Dados da regra não especificados' }, 400);
       }
       
-      const sheet = spreadsheet.getSheetByName('Recorrentes');
+      const sheet = spreadsheet.getSheetByName(tabName);
       if (!sheet) {
-        return createJsonResponse({ success: false, error: 'Aba "Recorrentes" não encontrada na planilha' }, 404);
+        return createJsonResponse({ success: false, error: 'Aba "' + tabName + '" não encontrada na planilha' }, 404);
       }
       
       sheet.appendRow(rule);
@@ -155,6 +181,7 @@ function doPost(e) {
       }
       
       const recurringSheet = spreadsheet.getSheetByName('Recorrentes');
+      const recurringReceivablesSheet = spreadsheet.getSheetByName('Recorrentes Recebimentos');
       const wesleySheet = spreadsheet.getSheetByName('Despesas [Wesley]');
       const luanaSheet = spreadsheet.getSheetByName('Despesas [Luana]');
       const wesleyIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Wesley]');
@@ -162,6 +189,11 @@ function doPost(e) {
       
       // Filtrar regras recorrentes ativas
       const recurring = getRowsAsObjects(recurringSheet, function(row) {
+        return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
+      });
+      
+      // Filtrar regras recorrentes de recebimentos ativas
+      const recurringReceivables = getRowsAsObjects(recurringReceivablesSheet, function(row) {
         return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
       });
       
@@ -187,6 +219,7 @@ function doPost(e) {
       return createJsonResponse({
         success: true,
         recurring: recurring,
+        recurringReceivables: recurringReceivables,
         wesleyExpenses: wesleyExpenses,
         luanaExpenses: luanaExpenses,
         wesleyReceivables: wesleyReceivables,
@@ -281,7 +314,8 @@ function doPost(e) {
         return createJsonResponse({ success: true, deletedCount: 0 });
       }
       
-      const dataRange = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+      const lastCol = sheet.getLastColumn();
+      const dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
       let deletedCount = 0;
       
       // Parse data localmente ignorando fuso horário
@@ -336,7 +370,8 @@ function doPost(e) {
         return createJsonResponse({ success: true, updatedCount: 0 });
       }
       
-      const range = sheet.getRange(2, 1, lastRow - 1, 7);
+      const lastCol = sheet.getLastColumn();
+      const range = sheet.getRange(2, 1, lastRow - 1, lastCol);
       const values = range.getValues();
       let updatedCount = 0;
       
@@ -377,6 +412,13 @@ function doPost(e) {
             }
             if (updatedFields.Compartilhado !== undefined) {
               values[i][5] = updatedFields.Compartilhado;
+            }
+            if (values[i].length > 7) {
+              if (updatedFields['Meio de Pagamento'] !== undefined) {
+                values[i][7] = updatedFields['Meio de Pagamento'];
+              } else if (updatedFields.meioPagamento !== undefined) {
+                values[i][7] = updatedFields.meioPagamento;
+              }
             }
             updatedCount++;
           }
