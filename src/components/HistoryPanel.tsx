@@ -185,7 +185,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
     setEditDate(exp.date);
     setEditTag(exp.tag);
     setEditIsShared(exp.isShared);
-    setEditPaymentMethod((exp.paymentMethod || 'Pix') as any);
+    setEditPaymentMethod((exp.paymentMethod || 'Pix') as 'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto');
     setEditApplyFuture(false);
   };
 
@@ -771,7 +771,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
                   <select
                     className="form-control"
                     value={editPaymentMethod}
-                    onChange={(e) => setEditPaymentMethod(e.target.value as any)}
+                    onChange={(e) => setEditPaymentMethod(e.target.value as 'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto')}
                     disabled={saving}
                   >
                     <option value="Pix">Pix</option>

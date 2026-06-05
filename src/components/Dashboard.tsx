@@ -258,7 +258,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ url, token }) => {
     });
 
     if (matchedReceivable) {
-      matchedReceivableIds.add(rec.id);
+      matchedReceivableIds.add(matchedReceivable.id);
       return false;
     }
     return true;

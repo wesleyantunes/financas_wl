@@ -495,7 +495,7 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
 
       {/* Settings / Config Form */}
       {showConfig ? (
-        <RecurringConfig url={url} token={token} onRuleAdded={fetchMonthData} mode={recurringType} />
+        <RecurringConfig key={recurringType} url={url} token={token} onRuleAdded={fetchMonthData} mode={recurringType} />
       ) : (
         <>
           {/* Tabs switch (shows only when not in settings) */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { addRecurringRule } from '../services/api';
 import { PlusCircle, AlertCircle, Sparkles } from 'lucide-react';
 
@@ -14,19 +14,13 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
   const [estimatedValue, setEstimatedValue] = useState('');
   const [dueDay, setDueDay] = useState('10');
   const [type, setType] = useState<'Fixo' | 'Variável'>('Fixo');
-  const [owner, setOwner] = useState<'Wesley' | 'Luana' | 'Compartilhado'>('Compartilhado');
+  const [owner, setOwner] = useState<'Wesley' | 'Luana' | 'Compartilhado'>(
+    mode === 'receivable' ? 'Wesley' : 'Compartilhado'
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    if (mode === 'receivable') {
-      setOwner('Wesley');
-    } else {
-      setOwner('Compartilhado');
-    }
-  }, [mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,7 +221,7 @@ export const RecurringConfig: React.FC<RecurringConfigProps> = ({ url, token, on
           <select
             className="form-control"
             value={owner}
-            onChange={(e) => setOwner(e.target.value as any)}
+            onChange={(e) => setOwner(e.target.value as 'Wesley' | 'Luana' | 'Compartilhado')}
             disabled={submitting}
           >
             {mode === 'expense' && <option value="Compartilhado">Compartilhado (Casal)</option>}

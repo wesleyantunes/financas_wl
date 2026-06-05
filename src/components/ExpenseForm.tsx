@@ -351,7 +351,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
                 id="expense-payment-method"
                 className="form-control"
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
+                onChange={(e) => setPaymentMethod(e.target.value as 'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto')}
                 disabled={submitting}
                 style={{ cursor: 'pointer' }}
               >
