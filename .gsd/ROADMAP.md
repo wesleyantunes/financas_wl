@@ -1,5 +1,5 @@
-> **Current Phase:** Phase 8: Identificação de Meios de Pagamento (PIX vs Cartão)
-> **Status:** planning
+> **Current Phase:** None
+> **Status:** completed
 
 ## Must-Haves (from SPEC)
 
@@ -15,6 +15,8 @@
 - [x] Lançamento de despesas e receitas unificado no formulário com alternador rápido.
 - [x] Cartões de poupança líquida mensal (individual e do casal) no Dashboard.
 - [x] Listagem, edição e exclusão de receitas independentes no painel de Histórico.
+- [x] Diferenciação de Meios de Pagamento (Pix, Cartão Wesley, Cartão Luana, Boleto) com atribuição de cartões cruzados na reconciliação.
+- [x] Projeção de fluxo de caixa futuro baseado em recebimentos recorrentes.
 
 ---
 
@@ -34,7 +36,7 @@
 
 ### Phase 2: Lançamento de Despesas e Parcelamentos (Core Feature 1)
 **Status:** ✅ Complete
-**Objective:** Criar o formulário de despesas e implementar a expansão de compras parceladas em linhas futuras da planilha.
+**Objective:** Criar o formulário de despesas e implementar a expansão de compras parceladas in linhas futuras da planilha.
 **Depends on:** Phase 1
 **Requirements:** REQ-03, REQ-04, REQ-05, NFR-02
 
@@ -105,13 +107,13 @@
 ---
 
 ### Phase 8: Identificação de Meios de Pagamento (PIX vs Cartão)
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 **Objective:** Adicionar suporte a Meio de Pagamento (Pix, Cartão Wesley, Cartão Luana, Boleto) nas despesas para que Wesley e Luana consigam diferenciar a origem do fluxo de caixa e ajustar a conciliação financeira do Dashboard para faturas intercruzadas.
 **Depends on:** Phase 7
 **Requirements:** REQ-15, REQ-16
 
 **Plans:**
-- [ ] TBD (run /plan 8 to create)
+- [x] Plan 8.1: Meios de Pagamento e Previsão de Recebimentos/Saldo Futuro (completado em 2026-06-05)
 
 ---
 
@@ -126,7 +128,7 @@
 | 5     | ✅      | 2/2   | 2026-06-02 |
 | 6     | ✅      | 1/1   | 2026-06-02 |
 | 7     | ✅      | 1/1   | 2026-06-03 |
-| 8     | ⬜      | 0/1   | — |
+| 8     | ✅      | 1/1   | 2026-06-05 |
 
 ---
 
@@ -141,4 +143,4 @@
 | 5     | 2026-06-02 | 2026-06-02 | < 1 dia  |
 | 6     | 2026-06-02 | 2026-06-02 | < 1 dia  |
 | 7     | 2026-06-03 | 2026-06-03 | < 1 dia  |
-| 8     | —          | —          | —        |
+| 8     | 2026-06-05 | 2026-06-05 | < 1 dia  |

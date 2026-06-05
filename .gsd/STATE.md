@@ -1,5 +1,5 @@
 ---
-updated: 2026-06-01T21:44:00-04:00
+updated: 2026-06-05T01:48:22Z
 ---
 
 # Project State
@@ -7,18 +7,18 @@ updated: 2026-06-01T21:44:00-04:00
 ## Current Position
 
 **Milestone:** v1.0
-**Phase:** 8 (planning)
-**Task:** Planning complete
-**Status:** Ready for execution
+**Phase:** 8 (completed)
+**Task:** All tasks complete
+**Status:** Verified
 **Plan:** —
 
 ## Last Action
 
-Elaborado o plano de execução da Fase 8. Definida a alteração das tabelas de despesas no Sheets para comportar o "Meio de Pagamento" (Pix, Cartão Wesley, Cartão Luana, Boleto), a inteligência do Dashboard para compensar pagamentos em cartões alheios no acerto de contas, e a visualização/edição correspondente no histórico.
+Executada a Fase 8. Implementada a coluna de "Meio de Pagamento" (Pix, Cartão Wesley, Cartão Luana, Boleto) no Sheets e suporte no frontend (ExpenseForm, HistoryPanel, Dashboard e RecurringPanel) junto com previsão de recebimentos recorrentes e fluxo de caixa projetado.
 
 ## Next Steps
 
-1. /execute 8
+1. Nenhuma próxima fase restante no ROADMAP. v1.0 finalizado!
 
 ## Active Decisions
 
@@ -31,6 +31,7 @@ Decisions made that affect current work:
 | Estrutura de Lançamentos | Método de Expansão de Linhas (N linhas na planilha para compras parceladas) | 2026-06-01 | Phase 2 |
 | Divisão de Despesas | Lançamento em abas individuais por pessoa com marcação de "Compartilhado" | 2026-06-01 | Phase 2 |
 | Despesas Recorrentes | Fluxo de Projeção na tela e posterior Confirmação/Ajuste do valor real | 2026-06-01 | Phase 3 |
+| Previsão de Saldo | Conciliação e projeção baseada em pendências de regras recorrentes | 2026-06-05 | Phase 8 |
 
 ## Blockers
 
@@ -38,9 +39,8 @@ Nenhum.
 
 ## Concerns
 
-- A experiência de copiar e colar o código do Google Apps Script pelo usuário na primeira execução deve ser o mais intuitiva e didática possível, oferecendo um passo a passo detalhado no app.
+Nenhum.
 
 ## Session Context
 
-- O repositório Git foi inicializado.
-- O projeto é totalmente novo (greenfield), sem códigos pré-existentes.
+- O linter e build estão 100% validados.
