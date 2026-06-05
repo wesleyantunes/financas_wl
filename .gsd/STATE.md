@@ -7,18 +7,18 @@ updated: 2026-06-01T21:44:00-04:00
 ## Current Position
 
 **Milestone:** v1.0
-**Phase:** 7 (completed)
-**Task:** All tasks complete
-**Status:** Verified
+**Phase:** 8 (planning)
+**Task:** Planning complete
+**Status:** Ready for execution
 **Plan:** —
 
 ## Last Action
 
-Concluída a Fase 7 para Lançamento e Gestão de Recebimentos. Desenvolvido o formulário unificado, lógica de receitas e poupança líquida no Dashboard, visualização e manipulação independente de recebimentos no histórico, além de estender a API do React e do Apps Script.
+Elaborado o plano de execução da Fase 8. Definida a alteração das tabelas de despesas no Sheets para comportar o "Meio de Pagamento" (Pix, Cartão Wesley, Cartão Luana, Boleto), a inteligência do Dashboard para compensar pagamentos em cartões alheios no acerto de contas, e a visualização/edição correspondente no histórico.
 
 ## Next Steps
 
-1. Concluir o Milestone v1.0 do projeto e entregar.
+1. /execute 8
 
 ## Active Decisions
 
