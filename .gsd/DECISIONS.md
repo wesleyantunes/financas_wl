@@ -62,4 +62,25 @@ Oferece um visual familiar e limpo, reduzindo fadiga ocular e dando um aspecto e
 
 ---
 
-*Last updated: 2026-06-01*
+---
+
+### [DEC-004] Importação de Extrato é Upload Manual, não Open Finance
+**Date**: 2026-07-02
+**Status**: Accepted
+
+#### Context
+A Phase 11 introduz importação de extrato bancário e fatura de cartão. O SPEC.md lista como Non-Goal explícito a "Sincronização automática com contas bancárias (Open Finance/Open Banking)", e é preciso deixar claro que a nova feature não contradiz essa decisão original.
+
+#### Decision
+A importação é sempre por upload manual de arquivo (CSV ou OFX) exportado pelo próprio usuário do app/site do banco. Não há integração com APIs bancárias, Open Finance, nem armazenamento de credenciais de terceiros. O parsing acontece 100% no navegador; apenas as linhas revisadas e confirmadas pelo usuário são gravadas via `addExpenses`.
+
+#### Rationale
+Mantém a constraint "Sem Servidor Backend / dados nunca saem do ecossistema do usuário" do SPEC.md e evita expandir silenciosamente o escopo para uma integração de credenciais bancárias, que traria requisitos de segurança e compliance muito maiores.
+
+#### Consequences
+- PDF de fatura fica fora do escopo da Phase 11 (layout varia por banco e exigiria parsing mais complexo) — pode ser reavaliado em uma fase futura.
+- Formatos de CSV variam por banco: a tela de importação precisa de um passo de mapeamento manual de colunas em vez de assumir um layout fixo.
+
+---
+
+*Last updated: 2026-07-02*
