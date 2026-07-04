@@ -137,13 +137,13 @@
 ---
 
 ### Phase 10: Planejamento e Análise Financeira Avançada
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 **Objective:** Adicionar 4 ferramentas de planejamento sobre os dados já existentes: orçamento por categoria, previsão de saldo futuro com horizonte configurável, comparativo mês a mês/ano a ano, e divisão/acerto de despesas compartilhadas entre Wesley e Luana.
 **Depends on:** Phase 9
 **Requirements:** REQ-18, REQ-19, REQ-20, REQ-21
 
 **Plans:**
-- [ ] Plan 10.1: Orçamento por Categoria/Tag
+- [x] Plan 10.1: Orçamento por Categoria/Tag (completado em 2026-07-04)
 - [ ] Plan 10.2: Previsão de Saldo Futuro Avançada
 - [ ] Plan 10.3: Comparativo Mês a Mês / Ano a Ano
 - [ ] Plan 10.4: Divisão de Despesas Compartilhadas (Acerto de Contas)
@@ -152,12 +152,13 @@
 
 ### Phase 11: Importação de Extrato Bancário e Fatura de Cartão
 **Status:** ⬜ Not Started
-**Objective:** Permitir importar extratos (CSV) e faturas (OFX) exportados do banco, com deduplicação contra lançamentos já existentes e revisão humana obrigatória antes da gravação em lote.
+**Objective:** Permitir importar extratos (CSV/OFX) e faturas em PDF exportados do banco, com deduplicação contra lançamentos já existentes e revisão humana obrigatória antes da gravação em lote.
 **Depends on:** Phase 9
 **Requirements:** REQ-22
 
 **Plans:**
 - [ ] Plan 11.1: Importação de Extrato Bancário e Fatura de Cartão (CSV/OFX)
+- [ ] Plan 11.2: Importação de Fatura de Cartão em PDF (depende do Plan 11.1)
 
 ---
 
@@ -174,8 +175,8 @@
 | 7     | ✅      | 1/1   | 2026-06-03 |
 | 8     | ✅      | 1/1   | 2026-06-05 |
 | 9     | ✅      | 1/1   | 2026-06-05 |
-| 10    | ⬜      | 0/4   | —          |
-| 11    | ⬜      | 0/1   | —          |
+| 10    | 🔄      | 1/4   | —          |
+| 11    | ⬜      | 0/2   | —          |
 
 ---
 
@@ -192,5 +193,5 @@
 | 7     | 2026-06-03 | 2026-06-03 | < 1 dia  |
 | 8     | 2026-06-05 | 2026-06-05 | < 1 dia  |
 | 9     | 2026-06-05 | 2026-06-05 | < 1 dia  |
-| 10    | —          | —          | —        |
+| 10    | 2026-07-04 | —          | Em andamento |
 | 11    | —          | —          | —        |

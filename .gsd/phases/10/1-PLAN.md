@@ -10,6 +10,8 @@ gap_closure: false
 ## Objective
 Permitir que Wesley e Luana definam um limite mensal de gasto por tag (ex: Alimentação, Lazer) e acompanhem visualmente o consumo desse limite ao longo do mês, reaproveitando as tags fixas já usadas em `ExpenseForm.tsx`.
 
+> **Decisão registrada (DEC-005):** orçamento com `Dono = "Compartilhado"` soma as despesas da tag nas DUAS abas (`Despesas [Wesley]` + `Despesas [Luana]`).
+
 ## Context
 Load these files for context:
 - .gsd/SPEC.md
@@ -20,16 +22,6 @@ Load these files for context:
 - src/components/RecurringPanel.tsx (padrão de painel CRUD simples a seguir)
 
 ## Tasks
-
-<task type="checkpoint:decision">
-  <name>Definir escopo do orçamento compartilhado</name>
-  <action>
-    Confirmar com o usuário: um orçamento por tag marcado como "Compartilhado" soma as despesas das DUAS abas (`Despesas [Wesley]` + `Despesas [Luana]`) daquela tag? Ou cada dono só pode ter orçamento individual (Wesley e Luana definem limites separados, mesmo para a mesma tag)?
-  </action>
-  <done>
-    Decisão registrada em .gsd/DECISIONS.md antes de iniciar a implementação.
-  </done>
-</task>
 
 <task type="auto">
   <name>Criar aba Orcamentos e actions de CRUD no Apps Script</name>
@@ -64,8 +56,8 @@ Load these files for context:
   </files>
   <action>
     Criar `BudgetPanel.tsx`:
-    - Listar os orçamentos ativos (via `getBudgets`) com formulário simples de cadastro/edição (Tag via `<select>` com a lista fixa de tags de despesa, Valor Limite, Dono).
-    - Para cada orçamento, calcular o gasto atual do mês somando despesas da(s) aba(s) correspondente(s) filtradas por Tag (reaproveitar a mesma normalização de despesas usada em `CardInvoicePanel.tsx`).
+    - Listar os orçamentos ativos (via `getBudgets`) com formulário simples de cadastro/edição (Tag via `<select>` com a lista fixa de tags de despesa, Valor Limite, Dono: `Wesley | Luana | Compartilhado`).
+    - Para cada orçamento, calcular o gasto atual do mês filtrando despesas por Tag: se `Dono = "Compartilhado"`, somar as despesas da tag nas DUAS abas (`Despesas [Wesley]` + `Despesas [Luana]`); se `Dono = "Wesley"` ou `"Luana"`, somar apenas a aba correspondente (reaproveitar a mesma normalização de despesas usada em `CardInvoicePanel.tsx`).
     - Renderizar barra de progresso: verde (<80% do limite), amarelo (80–100%), vermelho (>100%).
 
     Em `App.tsx`, adicionar uma nova aba de navegação "Orçamento" ao lado das existentes (Dashboard, Lançar, Cartões, Recorrentes, Histórico).

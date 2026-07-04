@@ -1,5 +1,5 @@
 ---
-updated: 2026-07-02T00:00:00Z
+updated: 2026-07-04T00:00:00Z
 ---
 
 # Project State
@@ -7,22 +7,26 @@ updated: 2026-07-02T00:00:00Z
 ## Current Position
 
 **Milestone:** v1.1
-**Phase:** 10 (planned)
-**Task:** Nenhuma iniciada
-**Status:** Planned
-**Plan:** —
+**Phase:** 10 (in progress)
+**Task:** Plan 10.1 completo
+**Status:** Verified
+**Plan:** 10.1
 
 ## Last Action
 
-Registradas as Fases 10 (Planejamento e Análise Financeira Avançada: Orçamento por Categoria, Previsão de Saldo Futuro Avançada, Comparativo Mês a Mês/Ano a Ano, Divisão de Despesas Compartilhadas) e 11 (Importação de Extrato Bancário/Fatura) com RESEARCH.md e PLAN.md em `.gsd/phases/10` e `.gsd/phases/11`, e os requisitos REQ-18 a REQ-22 em REQUIREMENTS.md. Fases v1.0 (1-9) seguem completas e verificadas.
+Implementado o Plan 10.1 (Orçamento por Categoria/Tag): nova aba `Orcamentos` e actions `getBudgets`/`addBudget`/`updateBudget`/`deleteBudget` no Apps Script ([scripts/google-apps-script.js](scripts/google-apps-script.js)); tipos e funções correspondentes em [src/services/api.ts](src/services/api.ts); novo componente [src/components/BudgetPanel.tsx](src/components/BudgetPanel.tsx) com formulário de cadastro, barras de progresso (verde/amarelo/vermelho) e edição/exclusão; nova aba de navegação "Orçamento" em [src/App.tsx](src/App.tsx). `npm run lint` e `npm run build` passaram limpos. Testado no navegador com backend mockado (fetch interceptado): soma de orçamento "Compartilhado" nas duas abas confirmada (Lazer: R$120 Wesley + R$200 Luana = R$320/300, barra vermelha), orçamento individual "Wesley" confirmado (Alimentação: R$450/500, barra amarela), fluxo de adicionar/editar/excluir validado. Não foi possível testar contra o Google Sheets real do usuário (sem credenciais).
 
 ## Next Steps
 
-1. Resolver os pontos de decisão marcados como `checkpoint:decision` antes de iniciar a implementação:
-   - Plan 10.1: orçamento "Compartilhado" soma as duas abas ou é sempre individual por dono?
-   - Plan 10.4: divisão do acerto de contas é sempre 50/50 ou configurável por despesa/pessoa?
-   - Plan 11.1: confirmar que a v1 de importação cobre apenas CSV/OFX (PDF de fatura fica para depois).
-2. Após as decisões, iniciar a implementação pelo Plan 10.1 (Orçamento por Categoria) — menor escopo e maior valor imediato.
+1. Validar manualmente com a planilha real (Wesley/Luana): reimplantar o Apps Script atualizado como nova versão do Web App para que a aba `Orcamentos` seja criada.
+2. Seguir com Plan 10.4 (Acerto de Contas) — inclui a migração de schema da 9ª coluna (`Divisão Wesley (%)`).
+3. Plans 10.2 e 10.3 (Previsão e Comparativo) podem rodar em paralelo, sem dependências entre si.
+4. Fase 11: Plan 11.1 (CSV/OFX) antes do Plan 11.2 (PDF), já que o PDF reaproveita a infraestrutura de revisão/dedup construída no 11.1.
+
+## Session Context (Plan 10.1)
+
+- `.claude/launch.json` foi criado neste projeto para permitir preview do dev server (`npm run dev` na porta 5173).
+- Lembrete importante para o usuário: o Google Apps Script publicado precisa ser **reimplantado** (Implantar → Gerenciar Implantações → Editar → Nova Versão) após colar o código atualizado de `scripts/google-apps-script.js`, senão a Web App continuará servindo a versão antiga sem as actions de orçamento.
 
 ## Active Decisions
 
@@ -38,7 +42,9 @@ Decisions made that affect current work:
 | Previsão de Saldo | Conciliação e projeção baseada em pendências de regras recorrentes | 2026-06-05 | Phase 8 |
 | Persistência de Orçamento/Acerto | Novas abas no Sheets (`Orcamentos`, `Acertos`), não localStorage, para sincronizar entre os dois usuários | 2026-07-02 | Phase 10 |
 | Agregação de Comparativo/Previsão | Novas actions agregadas no Apps Script (`getMonthlySummaries`, `getForecastData`) em vez de N chamadas de `getMonthData` no cliente | 2026-07-02 | Phase 10 |
-| Escopo de Importação | CSV/OFX parseados 100% no cliente, sem novo endpoint no Apps Script; PDF de fatura fora de escopo nesta fase | 2026-07-02 | Phase 11 |
+| Escopo de Importação | CSV/OFX parseados 100% no cliente (Plan 11.1); PDF de fatura também no escopo (Plan 11.2), com heurística genérica + revisão manual obrigatória | 2026-07-03 | Phase 11 |
+| Orçamento Compartilhado | Soma o gasto da tag nas duas abas (Wesley + Luana) quando `Dono = "Compartilhado"` | 2026-07-03 | Phase 10 (DEC-005) |
+| Divisão do Acerto de Contas | Configurável por despesa (nova coluna `Divisão Wesley (%)`, padrão 50), não um split fixo global | 2026-07-03 | Phase 10 (DEC-006) |
 
 ## Blockers
 
@@ -46,10 +52,9 @@ Nenhum.
 
 ## Concerns
 
-- Plans 10.1 e 10.4 têm tasks `checkpoint:decision` pendentes de resposta do usuário antes da implementação (ver Next Steps).
-- Plan 11.1 depende de confirmação de escopo (CSV/OFX apenas) antes de iniciar.
+Nenhum — as 3 decisões de escopo pendentes foram resolvidas (DEC-005, DEC-006, DEC-007).
 
 ## Session Context
 
 - Fases 1-9 (v1.0): linter e build 100% validados, em produção.
-- Fases 10-11 (v1.1): apenas planejadas, nenhum código escrito ainda.
+- Fases 10-11 (v1.1): planejadas e com escopo fechado, nenhum código escrito ainda.

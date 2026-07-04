@@ -48,13 +48,13 @@ function doPost(e) {
     
     // Ação: Inicializar Abas da Planilha
     if (action === 'initialize') {
-      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]', 'Recorrentes Recebimentos'];
+      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]', 'Recorrentes Recebimentos', 'Orcamentos'];
       const results = {};
-      
+
       activeTabs.forEach(tabName => {
         const sheetExists = !!spreadsheet.getSheetByName(tabName);
         const sheet = getOrCreateSheet(spreadsheet, tabName);
-        
+
         if (!sheetExists) {
           // Exemplos específicos pós criação
           if (tabName === 'Recorrentes') {
@@ -64,6 +64,8 @@ function doPost(e) {
           } else if (tabName === 'Recorrentes Recebimentos') {
             sheet.appendRow(['recrec_ex1', 'Salário Wesley', 5000.00, 5, 'Wesley', true]);
             sheet.appendRow(['recrec_ex2', 'Pró-labore Luana', 4000.00, 10, 'Luana', true]);
+          } else if (tabName === 'Orcamentos') {
+            sheet.appendRow(['orc_ex1', 'Lazer', 300.00, 'Compartilhado', true]);
           }
           results[tabName] = 'Criada';
         } else {
@@ -126,6 +128,92 @@ function doPost(e) {
       
       sheet.appendRow(rule);
       return createJsonResponse({ success: true });
+    }
+
+    // Ação: Obter Orçamentos Ativos
+    if (action === 'getBudgets') {
+      const sheet = spreadsheet.getSheetByName('Orcamentos');
+      const budgets = getRowsAsObjects(sheet, function(row) {
+        return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
+      });
+      return createJsonResponse({ success: true, budgets: budgets });
+    }
+
+    // Ação: Adicionar Orçamento
+    if (action === 'addBudget') {
+      const budget = requestData.budget; // Array: [id, tag, valorLimite, dono, ativo]
+
+      if (!budget || !budget.length) {
+        return createJsonResponse({ success: false, error: 'Dados do orçamento não especificados' }, 400);
+      }
+
+      const sheet = getOrCreateSheet(spreadsheet, 'Orcamentos');
+      sheet.appendRow(budget);
+      return createJsonResponse({ success: true });
+    }
+
+    // Ação: Atualizar Orçamento por ID
+    if (action === 'updateBudget') {
+      const id = requestData.id;
+      const budget = requestData.budget; // Array de novos valores
+
+      if (!id || !budget || !budget.length) {
+        return createJsonResponse({ success: false, error: 'ID ou dados do orçamento não especificados' }, 400);
+      }
+
+      const sheet = spreadsheet.getSheetByName('Orcamentos');
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "Orcamentos" não encontrada' }, 404);
+      }
+
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        return createJsonResponse({ success: false, error: 'Tabela vazia' }, 400);
+      }
+
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      let updated = false;
+
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === String(id)) {
+          sheet.getRange(i + 2, 1, 1, budget.length).setValues([budget]);
+          updated = true;
+          break;
+        }
+      }
+
+      return createJsonResponse({ success: true, updated: updated });
+    }
+
+    // Ação: Excluir Orçamento por ID
+    if (action === 'deleteBudget') {
+      const id = requestData.id;
+
+      if (!id) {
+        return createJsonResponse({ success: false, error: 'ID não especificado' }, 400);
+      }
+
+      const sheet = spreadsheet.getSheetByName('Orcamentos');
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "Orcamentos" não encontrada' }, 404);
+      }
+
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        return createJsonResponse({ success: false, error: 'Tabela vazia' }, 400);
+      }
+
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      let deleted = false;
+
+      for (let i = ids.length - 1; i >= 0; i--) {
+        if (String(ids[i][0]) === String(id)) {
+          sheet.deleteRow(i + 2);
+          deleted = true;
+        }
+      }
+
+      return createJsonResponse({ success: true, deleted: deleted });
     }
 
     // Ação: Obter Dados do Mês e Regras Recorrentes
@@ -483,7 +571,14 @@ function getOrCreateSheet(spreadsheet, tabName) {
                             .setFontColor("#ffffff")
                             .setHorizontalAlignment("center");
     sheet.setFrozenRows(1);
+  } else if (tabName === 'Orcamentos') {
+    sheet.appendRow(['ID', 'Tag', 'Valor Limite', 'Dono', 'Ativo']);
+    sheet.getRange("A1:E1").setFontWeight("bold")
+                            .setBackground("#00a859")
+                            .setFontColor("#ffffff")
+                            .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
   }
-  
+
   return sheet;
 }

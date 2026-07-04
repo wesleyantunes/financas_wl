@@ -10,6 +10,8 @@ gap_closure: false
 ## Objective
 Permitir que Wesley e Luana importem um extrato (CSV) ou arquivo OFX exportado do banco, revisem as transações contra o que já está lançado (evitando duplicidade, inclusive com parcelas já expandidas), e confirmem em lote a gravação das novas despesas.
 
+> Este plano cobre CSV/OFX (formatos estruturados, menor risco). A importação de PDF de fatura está no Plan 11.2, que reaproveita a infraestrutura de revisão/dedup construída aqui.
+
 ## Context
 Load these files for context:
 - .gsd/SPEC.md
@@ -45,16 +47,6 @@ Load these files for context:
   </done>
 </task>
 
-<task type="checkpoint:decision">
-  <name>Confirmar escopo de formatos suportados na v1</name>
-  <action>
-    Confirmar com o usuário que a v1 cobre apenas CSV (com mapeamento manual de colunas) e OFX, e que importação direta de PDF de fatura fica para uma fase futura.
-  </action>
-  <done>
-    Decisão registrada em .gsd/DECISIONS.md.
-  </done>
-</task>
-
 <task type="auto">
   <name>Criar tela de Importação com revisão e gravação em lote</name>
   <files>
@@ -62,7 +54,7 @@ Load these files for context:
     src/components/App.tsx
   </files>
   <action>
-    Criar `ImportPanel.tsx`:
+    Criar `ImportPanel.tsx` já estruturado para receber um terceiro modo de importação (PDF, Plan 11.2) além de CSV/OFX — ex: um seletor de tipo de arquivo no topo, com a tabela de revisão e a lógica de dedup/gravação compartilhadas entre os modos:
     - Upload de arquivo (`.csv` ou `.ofx`), com seleção de Dono (Wesley/Luana) para onde as despesas serão lançadas.
     - Para CSV: exibir preview das primeiras linhas e permitir que o usuário indique qual coluna é Data, Descrição e Valor antes de confirmar o parsing.
     - Após parsear, rodar `matchExisting` contra as despesas do dono selecionado no período coberto pelo arquivo (usar `getMonthData` dos meses envolvidos).

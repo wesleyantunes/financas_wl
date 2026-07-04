@@ -17,11 +17,11 @@ Definir a abordagem para importar extratos bancários e faturas de cartão, evit
 ### Decision 1: Formatos de arquivo suportados na v1
 **Question:** Suportar CSV, OFX e PDF de fatura desde o início?
 **Options Considered:**
-1. CSV + OFX: formatos estruturados, exportáveis pela maioria dos bancos/apps brasileiros, parsing simples e confiável 100% no cliente.
-2. PDF de fatura: layout varia por banco/cartão, exige extração de texto (`pdf.js`) e regras específicas por template — alto risco de quebrar silenciosamente quando o banco muda o layout.
+1. CSV + OFX apenas: formatos estruturados, exportáveis pela maioria dos bancos/apps brasileiros, parsing simples e confiável 100% no cliente.
+2. CSV + OFX + PDF de fatura: layout varia por banco/cartão, exige extração de texto (`pdf.js`) e heurísticas de reconstrução de linha — risco maior de erro silencioso de parsing do que formatos estruturados.
 
-**Decision:** v1 cobre apenas CSV e OFX. PDF de fatura fica como extensão futura (fora desta fase), documentado como Non-Goal explícito da Phase 11.
-**Confidence:** High
+**Decision:** (DEC-007) Incluir PDF de fatura no escopo, a pedido do usuário, mas isolado em um plano próprio (Plan 11.2) SEM template por banco — uma heurística genérica (data + descrição + valor por linha) com revisão/edição manual OBRIGATÓRIA de cada linha extraída antes do match de duplicidade, e checagem de soma total contra o valor total da fatura quando encontrado no PDF (sanity check).
+**Confidence:** Medium — parsing de PDF é inerentemente menos confiável que CSV/OFX estruturado; a confiança vem da camada de revisão manual, não da extração em si.
 
 ### Decision 2: Onde processar o arquivo
 **Question:** Enviar o arquivo para o Apps Script processar, ou parsear no navegador?
@@ -49,6 +49,9 @@ O SPEC.md lista como Non-Goal "Sincronização automática com contas bancárias
 ### Reaproveitamento de infraestrutura existente
 `addExpenses(tabName, expenses[][])` já aceita inserção em lote — a importação só precisa montar o array no formato esperado, sem exigir nova action no Apps Script.
 
+### Extração de texto de PDF
+`pdf.js` (`getTextContent`) retorna itens de texto com posição (x, y), não linhas prontas — é preciso agrupar itens pela coordenada Y (mesma linha visual) para reconstruir cada linha da fatura antes de aplicar o regex de transação (`data + descrição + valor`). Faturas de cartão brasileiras costumam ter uma linha de "Total desta fatura" ou similar, útil como conferência de soma após a extração.
+
 ## Patterns to Follow
 - Reaproveitar `addExpenses` para a gravação final, mantendo o Apps Script sem alterações nesta fase.
 - Seguir o padrão de normalização de despesas já usado em `CardInvoicePanel.tsx` para comparar transações importadas com as existentes.
@@ -62,14 +65,16 @@ O SPEC.md lista como Non-Goal "Sincronização automática com contas bancárias
 |---------|---------|---------|
 | papaparse | ^5.x | Parsing de CSV genérico no navegador |
 | @types/papaparse | ^5.x | Tipos TypeScript |
+| pdfjs-dist | ^4.x | Extração de texto de PDF de fatura no navegador (Plan 11.2) |
 
 Parser de OFX: implementação própria simples (formato é texto plano com tags `<STMTTRN>`), sem necessidade de dependência externa.
 
 ## Risks
 - **Formato de CSV varia por banco:** mitigar com uma tela de mapeamento de colunas (usuário indica qual coluna é Data/Descrição/Valor) em vez de assumir um layout fixo.
 - **Falsos negativos na deduplicação:** preferir sinalizar demais (mais "possíveis duplicatas") a sinalizar de menos, já que a decisão final é sempre do usuário.
+- **Extração de PDF pode errar silenciosamente** (linha mal reconstruída, valor cortado, layout de banco não previsto): mitigar com (a) tabela de revisão editável linha a linha antes do match de duplicidade — nunca confiar 100% no parser, e (b) conferência automática da soma extraída contra o "Total da fatura" quando esse valor for identificável no PDF, alertando o usuário em caso de divergência.
 
 ## Recommendations for Planning
-1. Escopo da v1: CSV + OFX apenas, com mapeamento manual de colunas para CSV.
-2. Revisão humana obrigatória antes de qualquer gravação em lote.
-3. PDF de fatura documentado como fora de escopo desta fase (não um Non-Goal permanente do projeto, apenas desta fase).
+1. Plan 11.1: CSV + OFX, com mapeamento manual de colunas para CSV — menor risco, entrega primeiro.
+2. Plan 11.2: PDF de fatura, reaproveitando a infraestrutura de revisão/dedup do Plan 11.1, com camada extra de edição manual das linhas extraídas (não confiar apenas na extração automática) e checagem de soma total.
+3. Revisão humana obrigatória antes de qualquer gravação em lote, em ambos os planos.

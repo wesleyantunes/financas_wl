@@ -5,8 +5,9 @@ import { RecurringPanel } from './components/RecurringPanel';
 import { Dashboard } from './components/Dashboard';
 import { HistoryPanel } from './components/HistoryPanel';
 import { CardInvoicePanel } from './components/CardInvoicePanel';
+import { BudgetPanel } from './components/BudgetPanel';
 import { testConnection, initializeSpreadsheet } from './services/api';
-import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link, CreditCard } from 'lucide-react';
+import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link, CreditCard, Target } from 'lucide-react';
 
 function App() {
   const [initialCreds] = useState(() => {
@@ -34,7 +35,7 @@ function App() {
     const savedUser = localStorage.getItem('finance_active_user');
     return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'recurring' | 'history'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'budget' | 'recurring' | 'history'>('dashboard');
 
   const handleConnect = async (url: string, token: string) => {
     // 1. Testa a conexão (Ping)
@@ -217,6 +218,13 @@ function App() {
           />
         )}
 
+        {activeTab === 'budget' && (
+          <BudgetPanel
+            url={appUrl}
+            token={secretToken}
+          />
+        )}
+
         {activeTab === 'history' && (
           <HistoryPanel
             url={appUrl}
@@ -301,6 +309,26 @@ function App() {
           >
             <CreditCard size={20} />
             Cartões
+          </button>
+
+          <button
+            onClick={() => setActiveTab('budget')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'budget' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'budget' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <Target size={20} />
+            Orçamento
           </button>
 
           <button

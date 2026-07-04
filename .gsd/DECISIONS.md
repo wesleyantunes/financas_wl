@@ -66,7 +66,7 @@ Oferece um visual familiar e limpo, reduzindo fadiga ocular e dando um aspecto e
 
 ### [DEC-004] Importação de Extrato é Upload Manual, não Open Finance
 **Date**: 2026-07-02
-**Status**: Accepted
+**Status**: Accepted (escopo de formato revisto pelo DEC-007)
 
 #### Context
 A Phase 11 introduz importação de extrato bancário e fatura de cartão. O SPEC.md lista como Non-Goal explícito a "Sincronização automática com contas bancárias (Open Finance/Open Banking)", e é preciso deixar claro que a nova feature não contradiz essa decisão original.
@@ -78,9 +78,67 @@ A importação é sempre por upload manual de arquivo (CSV ou OFX) exportado pel
 Mantém a constraint "Sem Servidor Backend / dados nunca saem do ecossistema do usuário" do SPEC.md e evita expandir silenciosamente o escopo para uma integração de credenciais bancárias, que traria requisitos de segurança e compliance muito maiores.
 
 #### Consequences
-- PDF de fatura fica fora do escopo da Phase 11 (layout varia por banco e exigiria parsing mais complexo) — pode ser reavaliado em uma fase futura.
 - Formatos de CSV variam por banco: a tela de importação precisa de um passo de mapeamento manual de colunas em vez de assumir um layout fixo.
+- ~~PDF de fatura fica fora do escopo da Phase 11~~ — revisto pelo DEC-007: usuário pediu explicitamente suporte a PDF, incluído com salvaguardas.
 
 ---
 
-*Last updated: 2026-07-02*
+### [DEC-005] Orçamento Compartilhado Soma as Duas Abas
+**Date**: 2026-07-03
+**Status**: Accepted
+
+#### Context
+Ao desenhar o Plan 10.1 (Orçamento por Categoria/Tag), era preciso decidir se um orçamento marcado como "Compartilhado" soma o gasto da tag nas duas abas (`Despesas [Wesley]` + `Despesas [Luana]`) ou se cada dono só pode ter metas individuais.
+
+#### Decision
+Um orçamento com `Dono = "Compartilhado"` soma as despesas da tag em AMBAS as abas. Wesley e Luana podem ter metas conjuntas por tag, além de (opcionalmente) metas individuais.
+
+#### Rationale
+Pedido explícito do usuário: "vamos deixar metas para os dois".
+
+#### Consequences
+- O painel de Orçamento (`BudgetPanel.tsx`) precisa ramificar o cálculo do gasto atual conforme o `Dono` do orçamento (individual vs. soma das duas abas).
+
+---
+
+### [DEC-006] Divisão do Acerto de Contas é Configurável por Despesa
+**Date**: 2026-07-03
+**Status**: Accepted
+
+#### Context
+No Plan 10.4 (Acerto de Contas), era preciso decidir se a cota justa de cada despesa compartilhada é sempre 50/50 ou configurável.
+
+#### Decision
+Cada despesa compartilhada tem seu próprio percentual de divisão (ex: aluguel 60% Wesley / 40% Luana, mercado 50/50), armazenado numa nova coluna `Divisão Wesley (%)` (9ª coluna) nas abas `Despesas [Wesley]`/`[Luana]`, com padrão 50 quando não ajustado.
+
+#### Rationale
+Pedido explícito do usuário: "configurável por despesa" — reflete que nem toda despesa do casal é dividida igualmente (ex: contas de valor desproporcional ao uso de cada um).
+
+#### Consequences
+- Adiciona uma 9ª coluna às abas de despesas, seguindo o mesmo padrão incremental já usado para adicionar `Meio de Pagamento` na Phase 8.
+- `ExpenseForm.tsx` e `HistoryPanel.tsx` precisam de um controle de ajuste percentual sempre que `Compartilhado = true`.
+- O cálculo do Acerto de Contas soma a cota justa despesa a despesa (usando o percentual individual de cada uma), em vez de aplicar um split fixo sobre o total.
+
+---
+
+### [DEC-007] Importação de Fatura em PDF Entra no Escopo (com Salvaguardas)
+**Date**: 2026-07-03
+**Status**: Accepted (supersede parcialmente o DEC-004)
+
+#### Context
+O DEC-004 havia deixado PDF de fatura fora do escopo da Phase 11 por risco de parsing frágil (layout varia por banco). O usuário confirmou que quer importar diretamente o PDF da fatura.
+
+#### Decision
+Incluir importação de PDF como Plan 11.2, separado do Plan 11.1 (CSV/OFX). A extração usa uma heurística GENÉRICA de linha (data + descrição + valor, reconstruída a partir das coordenadas de texto do `pdf.js`) — sem manter templates por banco. Toda transação extraída passa por uma tabela de revisão totalmente editável antes de qualquer gravação, e a soma das transações é conferida contra o total da fatura quando esse valor é identificável no PDF.
+
+#### Rationale
+Atende ao pedido do usuário sem assumir o risco de manutenção de N templates por banco (que quebrariam silenciosamente a cada mudança de layout). A revisão manual obrigatória é a salvaguarda contra erro de extração, já que a confiança do parsing de PDF é estruturalmente menor que a de CSV/OFX.
+
+#### Consequences
+- Adiciona a dependência `pdfjs-dist` ao projeto.
+- A experiência de revisão do PDF é mais pesada que a de CSV/OFX (edição linha a linha esperada com mais frequência).
+- Mudanças de layout de fatura por parte do banco podem exigir ajustes futuros na heurística — não há garantia de suporte universal.
+
+---
+
+*Last updated: 2026-07-03*

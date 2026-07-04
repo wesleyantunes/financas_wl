@@ -37,6 +37,19 @@ export interface RawRecurringRule {
   ativo?: boolean | string | number;
 }
 
+export interface RawBudget {
+  ID?: string;
+  id?: string;
+  Tag?: string;
+  tag?: string;
+  ['Valor Limite']?: string | number;
+  valorLimite?: string | number;
+  Dono?: string;
+  dono?: string;
+  Ativo?: boolean | string | number;
+  ativo?: boolean | string | number;
+}
+
 interface ApiRequestPayload {
   token: string;
   action: string;
@@ -126,6 +139,50 @@ export async function addRecurringRule(
   tabName: string = 'Recorrentes'
 ): Promise<unknown> {
   return await request(url, token, 'addRecurringRule', { rule, tabName });
+}
+
+/**
+ * Busca todos os orçamentos ativos por tag
+ */
+export async function getBudgets(
+  url: string,
+  token: string
+): Promise<{ success: boolean; budgets: RawBudget[] }> {
+  return await request<{ success: boolean; budgets: RawBudget[] }>(url, token, 'getBudgets');
+}
+
+/**
+ * Adiciona um novo orçamento na aba Orcamentos da planilha
+ */
+export async function addBudget(
+  url: string,
+  token: string,
+  budget: unknown[]
+): Promise<unknown> {
+  return await request(url, token, 'addBudget', { budget });
+}
+
+/**
+ * Atualiza os valores de um orçamento pelo ID
+ */
+export async function updateBudget(
+  url: string,
+  token: string,
+  id: string,
+  budget: unknown[]
+): Promise<unknown> {
+  return await request(url, token, 'updateBudget', { id, budget });
+}
+
+/**
+ * Exclui um orçamento pelo ID
+ */
+export async function deleteBudget(
+  url: string,
+  token: string,
+  id: string
+): Promise<unknown> {
+  return await request(url, token, 'deleteBudget', { id });
 }
 
 /**
