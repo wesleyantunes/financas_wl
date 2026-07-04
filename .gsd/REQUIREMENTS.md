@@ -26,8 +26,8 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 | REQ-09 | Visualização das despesas lançadas com possibilidade de edição e exclusão | SPEC Goal 7 | 5 | Pending |
 | REQ-10 | Separação das contas recorrentes por pessoa (Wesley / Luana / Compartilhado) em tabelas independentes | SPEC Goal 7 | 5 | Pending |
 | REQ-18 | Orçamento mensal por categoria/tag com indicador visual de consumo (barra de progresso) | Milestone v1.1 | 10 | Complete |
-| REQ-19 | Previsão de saldo futuro com horizonte configurável (30/60/90 dias) e estimativa de contas variáveis por histórico | Milestone v1.1 | 10 | Pending |
-| REQ-20 | Comparativo de gastos mês a mês (12 meses) e mesma competência ano a ano, por tag | Milestone v1.1 | 10 | Pending |
+| REQ-19 | Previsão de saldo futuro com horizonte configurável (30/60/90 dias) e estimativa de contas variáveis por histórico | Milestone v1.1 | 10 | Complete |
+| REQ-20 | Comparativo de gastos mês a mês (12 meses) e mesma competência ano a ano, por tag | Milestone v1.1 | 10 | Complete |
 | REQ-21 | Divisão/acerto de despesas compartilhadas entre Wesley e Luana com registro de quitação por mês | Milestone v1.1 | 10 | Complete |
 | REQ-22 | Importação de extrato bancário (CSV) e fatura de cartão (OFX) com deduplicação e revisão humana antes da gravação | Milestone v1.1 | 11 | Pending |
 
@@ -68,8 +68,8 @@ Requirements derived from SPEC.md for traceability and coverage tracking.
 | REQ-09 | Phase 5 Histórico | List, edit, and delete expense rows, verify updates in sheet | — |
 | REQ-10 | Phase 5 Histórico | Check if recurring bills are separated by owner in the UI | — |
 | REQ-18 | Plan 10.1 Orçamento | Cadastrar limite por tag, lançar despesa da tag, verificar barra de progresso atualizar | Complete (testado com mock de backend: soma "Compartilhado" nas duas abas, cores verde/amarelo/vermelho corretas, CRUD completo) |
-| REQ-19 | Plan 10.2 Previsão | Selecionar horizonte de 30/60/90 dias, verificar gráfico e ausência de dupla contagem de recorrentes já confirmados | — |
-| REQ-20 | Plan 10.3 Comparativo | Comparar dois meses e verificar totais e variação % por tag | — |
+| REQ-19 | Plan 10.2 Previsão | Selecionar horizonte de 30/60/90 dias, verificar gráfico e ausência de dupla contagem de recorrentes já confirmados | Complete (testado com mock: saldo 1000 + salário 3000 (dia 5) - Internet 100 (dia 15) - Energia 190/média (dia 20) = 3710, batendo com a tabela mês a mês) |
+| REQ-20 | Plan 10.3 Comparativo | Comparar dois meses e verificar totais e variação % por tag | Complete (testado com mock: variação % por tag e total calculada corretamente; gráfico de 12 meses renderizado) |
 | REQ-21 | Plan 10.4 Acerto de Contas | Lançar despesa compartilhada com cartão cruzado, verificar cálculo do saldo devedor e marcação de quitação | Complete (testado com mock: divisão configurável 60/40 e 50/50 por despesa gerou saldo correto de R$250, distinto do resultado 50/50 fixo de R$350; fluxo de quitação validado) |
 | REQ-22 | Plan 11.1 Importação | Importar CSV/OFX de teste, verificar sinalização de duplicata contra parcela já existente e gravação apenas dos itens confirmados | — |
 

@@ -160,6 +160,48 @@ export async function addRecurringRule(
   return await request(url, token, 'addRecurringRule', { rule, tabName });
 }
 
+export interface MonthlySummary {
+  mes: string;
+  totalDespesas: number;
+  totalRecebimentos: number;
+  porTag: Record<string, number>;
+  porDono: { Wesley: number; Luana: number };
+}
+
+export interface ForecastRecurringRule extends RawRecurringRule {
+  mediaUltimasConfirmacoes?: number | null;
+}
+
+/**
+ * Busca totais agregados (despesas, recebimentos, por tag, por dono) para uma lista de meses YYYY-MM
+ */
+export async function getMonthlySummaries(
+  url: string,
+  token: string,
+  meses: string[]
+): Promise<{ success: boolean; summaries: MonthlySummary[] }> {
+  return await request<{ success: boolean; summaries: MonthlySummary[] }>(url, token, 'getMonthlySummaries', { meses });
+}
+
+/**
+ * Busca os dados agregados necessários para projetar o saldo futuro dentro de um horizonte em dias
+ */
+export async function getForecastData(
+  url: string,
+  token: string,
+  horizonDays: number
+): Promise<{
+  success: boolean;
+  horizonDays: number;
+  saldoRealizado: number;
+  recurring: ForecastRecurringRule[];
+  recurringReceivables: RawRecurringRule[];
+  futureExpenses: RawExpense[];
+  futureReceivables: RawExpense[];
+}> {
+  return await request(url, token, 'getForecastData', { horizonDays });
+}
+
 /**
  * Busca todos os orçamentos ativos por tag
  */

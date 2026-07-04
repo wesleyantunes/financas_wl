@@ -1,5 +1,5 @@
 ---
-updated: 2026-07-04T01:00:00Z
+updated: 2026-07-04T02:00:00Z
 ---
 
 # Project State
@@ -7,26 +7,36 @@ updated: 2026-07-04T01:00:00Z
 ## Current Position
 
 **Milestone:** v1.1
-**Phase:** 10 (in progress)
-**Task:** Plans 10.1 e 10.4 completos
+**Phase:** 10 (completed)
+**Task:** Todos os 4 planos completos
 **Status:** Verified
-**Plan:** 10.4
+**Plan:** —
 
 ## Last Action
 
-Implementado o Plan 10.4 (Divisão de Despesas Compartilhadas / Acerto de Contas), além do Plan 10.1 já concluído anteriormente:
-- **Schema:** nova 9ª coluna `Divisão Wesley (%)` nas abas `Despesas [Wesley]`/`[Luana]` (com migração automática de abas antigas na action `initialize`) e nova aba `Acertos` no Apps Script ([scripts/google-apps-script.js](scripts/google-apps-script.js)), com actions `getAcertos`/`addAcerto` e suporte à divisão em `updateInstallments`.
-- **API:** tipo `RawAcerto`, funções `getAcertos`/`addAcerto`, e campo de divisão em `RawExpense`/`updateInstallments` em [src/services/api.ts](src/services/api.ts).
-- **UI:** slider de divisão Wesley/Luana em [src/components/ExpenseForm.tsx](src/components/ExpenseForm.tsx) e no modal de edição de [src/components/HistoryPanel.tsx](src/components/HistoryPanel.tsx) (visível apenas quando "Compartilhado" está marcado, padrão 50/50); novo painel [src/components/SettlementPanel.tsx](src/components/SettlementPanel.tsx) ("Acerto") calculando saldo devedor por despesa (não 50/50 fixo) e com botão de quitação.
-- `npm run lint` e `npm run build` passaram limpos.
-- Testado no navegador com backend mockado: despesa de Aluguel R$1000 (60% Wesley) + Supermercado R$300 (50% Wesley) gerou corretamente "Luana deve pagar R$250,00 para Wesley" (valor diferente do que um split fixo 50/50 daria — R$350 — confirmando que a divisão por despesa está sendo respeitada). Fluxo de "Marcar como Quitado" validado.
-- Não foi possível testar contra o Google Sheets real do usuário (sem credenciais).
+Fase 10 concluída (4/4 planos). Além dos Plans 10.1 (Orçamento) e 10.4 (Acerto de Contas) já registrados anteriormente, foram implementados:
+
+**Plan 10.2 — Previsão de Saldo Futuro Avançada:**
+- Nova action `getForecastData(horizonDays)` no Apps Script ([scripts/google-apps-script.js](scripts/google-apps-script.js)): retorna regras recorrentes ativas (com `mediaUltimasConfirmacoes` calculada para contas Variáveis a partir das 3 últimas confirmações passadas), lançamentos futuros já existentes dentro do horizonte, e o saldo realizado (recebimentos − despesas lançadas antes de hoje).
+- Novo painel [src/components/ForecastPanel.tsx](src/components/ForecastPanel.tsx): seletor de horizonte (30/60/90 dias), simulação dia a dia (evita duplicar recorrentes já lançados no mês), gráfico de área e tabela mês a mês.
+
+**Plan 10.3 — Comparativo Mês a Mês/Ano a Ano:**
+- Nova action `getMonthlySummaries(meses[])` no Apps Script: agrega totais por mês/tag/dono no próprio servidor, sem devolver linhas cruas (evita N requests).
+- Novo painel [src/components/ComparisonPanel.tsx](src/components/ComparisonPanel.tsx): gráfico de barras dos últimos 12 meses (com opção de segmentar por dono) e comparação lado a lado de duas competências com variação % por tag.
+
+**Ajuste de navegação:** com a Fase 10 completa, o app chegou a 9 abas na navegação inferior. A barra de navegação em [src/App.tsx](src/App.tsx) foi ajustada de `justify-content: space-around` (que espremia e sobrepunha os rótulos) para uma faixa `overflow-x: auto` com botões de largura fixa — necessário para não quebrar a UI mobile-first ao adicionar as novas abas.
+
+`npm run lint` e `npm run build` passaram limpos. Testado no navegador com backend mockado:
+- Previsão: saldo 1000 + salário 3000 (dia 5) − Internet 100 (dia 15) − Energia 190 (média histórica, não os 200 estimados, dia 20) = **3710**, batendo exatamente com a tabela de detalhamento mensal.
+- Comparativo: variação % por tag e total calculados corretamente entre duas competências; gráfico de 12 meses renderizado com rótulos corretos.
+
+Não foi possível testar contra o Google Sheets real do usuário (sem credenciais).
 
 ## Next Steps
 
-1. Validar manualmente com a planilha real (Wesley/Luana): reimplantar o Apps Script atualizado como nova versão do Web App para que a aba `Orcamentos`, a aba `Acertos` e a 9ª coluna de divisão sejam criadas/migradas.
-2. Seguir com Plans 10.2 (Previsão de Saldo Futuro Avançada) e 10.3 (Comparativo Mês a Mês/Ano a Ano) — podem rodar em paralelo, sem dependências entre si.
-3. Fase 11: Plan 11.1 (CSV/OFX) antes do Plan 11.2 (PDF), já que o PDF reaproveita a infraestrutura de revisão/dedup construída no 11.1.
+1. Validar manualmente com a planilha real (Wesley/Luana): reimplantar o Apps Script atualizado como nova versão do Web App para que a aba `Orcamentos`, a aba `Acertos` e a 9ª coluna de divisão sejam criadas/migradas, e as novas actions (`getForecastData`, `getMonthlySummaries`) fiquem disponíveis.
+2. Avaliar se a navegação inferior com 9 abas precisa de um redesenho mais estrutural (ex: agrupar em um menu "Mais") — o ajuste atual (scroll horizontal) resolve a sobreposição, mas pode não ser a melhor UX de longo prazo.
+3. Iniciar a Fase 11 (Importação): Plan 11.1 (CSV/OFX) antes do Plan 11.2 (PDF), já que o PDF reaproveita a infraestrutura de revisão/dedup construída no 11.1.
 
 ## Session Context (Fase 10)
 

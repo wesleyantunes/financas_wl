@@ -137,15 +137,15 @@
 ---
 
 ### Phase 10: Planejamento e Análise Financeira Avançada
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Objective:** Adicionar 4 ferramentas de planejamento sobre os dados já existentes: orçamento por categoria, previsão de saldo futuro com horizonte configurável, comparativo mês a mês/ano a ano, e divisão/acerto de despesas compartilhadas entre Wesley e Luana.
 **Depends on:** Phase 9
 **Requirements:** REQ-18, REQ-19, REQ-20, REQ-21
 
 **Plans:**
 - [x] Plan 10.1: Orçamento por Categoria/Tag (completado em 2026-07-04)
-- [ ] Plan 10.2: Previsão de Saldo Futuro Avançada
-- [ ] Plan 10.3: Comparativo Mês a Mês / Ano a Ano
+- [x] Plan 10.2: Previsão de Saldo Futuro Avançada (completado em 2026-07-04)
+- [x] Plan 10.3: Comparativo Mês a Mês / Ano a Ano (completado em 2026-07-04)
 - [x] Plan 10.4: Divisão de Despesas Compartilhadas (Acerto de Contas) (completado em 2026-07-04)
 
 ---
@@ -175,7 +175,7 @@
 | 7     | ✅      | 1/1   | 2026-06-03 |
 | 8     | ✅      | 1/1   | 2026-06-05 |
 | 9     | ✅      | 1/1   | 2026-06-05 |
-| 10    | 🔄      | 2/4   | —          |
+| 10    | ✅      | 4/4   | 2026-07-04 |
 | 11    | ⬜      | 0/2   | —          |
 
 ---
@@ -193,5 +193,5 @@
 | 7     | 2026-06-03 | 2026-06-03 | < 1 dia  |
 | 8     | 2026-06-05 | 2026-06-05 | < 1 dia  |
 | 9     | 2026-06-05 | 2026-06-05 | < 1 dia  |
-| 10    | 2026-07-04 | —          | Em andamento |
+| 10    | 2026-07-04 | 2026-07-04 | < 1 dia  |
 | 11    | —          | —          | —        |

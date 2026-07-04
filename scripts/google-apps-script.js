@@ -293,6 +293,188 @@ function doPost(e) {
       });
     }
 
+    // Ação: Obter Totais Agregados por Mês (Comparativo)
+    if (action === 'getMonthlySummaries') {
+      const meses = requestData.meses; // Array de strings 'YYYY-MM'
+
+      if (!meses || !meses.length) {
+        return createJsonResponse({ success: false, error: 'Lista de meses não especificada' }, 400);
+      }
+
+      const wesleySheet = spreadsheet.getSheetByName('Despesas [Wesley]');
+      const luanaSheet = spreadsheet.getSheetByName('Despesas [Luana]');
+      const wesleyIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Wesley]');
+      const luanaIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Luana]');
+
+      const wesleyRows = getRowsAsObjects(wesleySheet, null);
+      const luanaRows = getRowsAsObjects(luanaSheet, null);
+      const wesleyIncomeRows = getRowsAsObjects(wesleyIncomeSheet, null);
+      const luanaIncomeRows = getRowsAsObjects(luanaIncomeSheet, null);
+
+      function monthOfRow(row) {
+        if (!row.Data) return '';
+        if (row.Data instanceof Date) {
+          const y = row.Data.getFullYear();
+          const m = String(row.Data.getMonth() + 1).padStart(2, '0');
+          return y + '-' + m;
+        }
+        return String(row.Data).substring(0, 7);
+      }
+
+      function rowValue(row) {
+        const valRaw = row.Valor !== undefined ? row.Valor : 0;
+        return typeof valRaw === 'number' ? valRaw : (parseFloat(valRaw) || 0);
+      }
+
+      const summaries = meses.map(function(mes) {
+        const porTag = {};
+        const porDono = { Wesley: 0, Luana: 0 };
+        let totalDespesas = 0;
+        let totalRecebimentos = 0;
+
+        [{ rows: wesleyRows, dono: 'Wesley' }, { rows: luanaRows, dono: 'Luana' }].forEach(function(entry) {
+          entry.rows.forEach(function(row) {
+            if (monthOfRow(row) !== mes) return;
+            const valor = rowValue(row);
+            totalDespesas += valor;
+            porDono[entry.dono] += valor;
+            const tag = row.Tag || 'Outros';
+            porTag[tag] = (porTag[tag] || 0) + valor;
+          });
+        });
+
+        wesleyIncomeRows.concat(luanaIncomeRows).forEach(function(row) {
+          if (monthOfRow(row) !== mes) return;
+          totalRecebimentos += rowValue(row);
+        });
+
+        return {
+          mes: mes,
+          totalDespesas: totalDespesas,
+          totalRecebimentos: totalRecebimentos,
+          porTag: porTag,
+          porDono: porDono
+        };
+      });
+
+      return createJsonResponse({ success: true, summaries: summaries });
+    }
+
+    // Ação: Obter Dados para Previsão de Saldo Futuro
+    if (action === 'getForecastData') {
+      const horizonDays = requestData.horizonDays || 30;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + horizonDays);
+
+      const recurringSheet = spreadsheet.getSheetByName('Recorrentes');
+      const recurringReceivablesSheet = spreadsheet.getSheetByName('Recorrentes Recebimentos');
+      const wesleySheet = spreadsheet.getSheetByName('Despesas [Wesley]');
+      const luanaSheet = spreadsheet.getSheetByName('Despesas [Luana]');
+      const wesleyIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Wesley]');
+      const luanaIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Luana]');
+
+      const recurring = getRowsAsObjects(recurringSheet, function(row) {
+        return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
+      });
+      const recurringReceivables = getRowsAsObjects(recurringReceivablesSheet, function(row) {
+        return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
+      });
+
+      const wesleyAllExpenses = getRowsAsObjects(wesleySheet, null);
+      const luanaAllExpenses = getRowsAsObjects(luanaSheet, null);
+      const wesleyAllReceivables = getRowsAsObjects(wesleyIncomeSheet, null);
+      const luanaAllReceivables = getRowsAsObjects(luanaIncomeSheet, null);
+
+      function parseRowDate(row) {
+        if (!row.Data) return null;
+        if (row.Data instanceof Date) return row.Data;
+        const parts = String(row.Data).split('T')[0].split('-');
+        if (parts.length < 3) return null;
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+
+      function rowValueF(row) {
+        const valRaw = row.Valor !== undefined ? row.Valor : 0;
+        return typeof valRaw === 'number' ? valRaw : (parseFloat(valRaw) || 0);
+      }
+
+      // Média das últimas 3 confirmações passadas com a mesma descrição (para contas Variáveis)
+      function mediaUltimasConfirmacoes(descricao) {
+        const descLower = String(descricao || '').toLowerCase().trim();
+        if (!descLower) return null;
+
+        const matches = wesleyAllExpenses.concat(luanaAllExpenses).filter(function(exp) {
+          const expDesc = String(exp.Descrição || '').toLowerCase().trim();
+          const expDate = parseRowDate(exp);
+          return expDesc.indexOf(descLower) !== -1 && expDate && expDate.getTime() < today.getTime();
+        });
+
+        matches.sort(function(a, b) {
+          return parseRowDate(b).getTime() - parseRowDate(a).getTime();
+        });
+
+        const top3 = matches.slice(0, 3);
+        if (!top3.length) return null;
+
+        const sum = top3.reduce(function(acc, exp) {
+          return acc + rowValueF(exp);
+        }, 0);
+
+        return sum / top3.length;
+      }
+
+      const recurringWithEstimate = recurring.map(function(rule) {
+        const isVariable = rule.Tipo === 'Variável';
+        const media = isVariable ? mediaUltimasConfirmacoes(rule.Descrição) : null;
+        const result = {};
+        for (const key in rule) {
+          if (Object.prototype.hasOwnProperty.call(rule, key)) {
+            result[key] = rule[key];
+          }
+        }
+        result.mediaUltimasConfirmacoes = media;
+        return result;
+      });
+
+      // Lançamentos futuros já existentes dentro do horizonte pedido (evita duplicar na projeção do cliente)
+      function futureInRange(rows) {
+        return rows.filter(function(row) {
+          const d = parseRowDate(row);
+          return d && d.getTime() >= today.getTime() && d.getTime() <= endDate.getTime();
+        });
+      }
+
+      const futureExpenses = futureInRange(wesleyAllExpenses).concat(futureInRange(luanaAllExpenses));
+      const futureReceivables = futureInRange(wesleyAllReceivables).concat(futureInRange(luanaAllReceivables));
+
+      // Saldo realizado: tudo que já foi lançado antes de hoje
+      function sumBefore(rows) {
+        return rows.reduce(function(acc, row) {
+          const d = parseRowDate(row);
+          if (d && d.getTime() < today.getTime()) {
+            return acc + rowValueF(row);
+          }
+          return acc;
+        }, 0);
+      }
+
+      const realizedExpenses = sumBefore(wesleyAllExpenses.concat(luanaAllExpenses));
+      const realizedReceivables = sumBefore(wesleyAllReceivables.concat(luanaAllReceivables));
+
+      return createJsonResponse({
+        success: true,
+        horizonDays: horizonDays,
+        saldoRealizado: realizedReceivables - realizedExpenses,
+        recurring: recurringWithEstimate,
+        recurringReceivables: recurringReceivables,
+        futureExpenses: futureExpenses,
+        futureReceivables: futureReceivables
+      });
+    }
+
     // Ação: Excluir Despesa por ID
     if (action === 'deleteExpense') {
       const tabName = requestData.tabName;

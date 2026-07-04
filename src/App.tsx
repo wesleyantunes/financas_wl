@@ -7,8 +7,10 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { CardInvoicePanel } from './components/CardInvoicePanel';
 import { BudgetPanel } from './components/BudgetPanel';
 import { SettlementPanel } from './components/SettlementPanel';
+import { ForecastPanel } from './components/ForecastPanel';
+import { ComparisonPanel } from './components/ComparisonPanel';
 import { testConnection, initializeSpreadsheet } from './services/api';
-import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link, CreditCard, Target, Scale } from 'lucide-react';
+import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link, CreditCard, Target, Scale, TrendingUp, BarChart2 } from 'lucide-react';
 
 function App() {
   const [initialCreds] = useState(() => {
@@ -36,7 +38,7 @@ function App() {
     const savedUser = localStorage.getItem('finance_active_user');
     return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'budget' | 'settlement' | 'recurring' | 'history'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'budget' | 'settlement' | 'forecast' | 'comparison' | 'recurring' | 'history'>('dashboard');
 
   const handleConnect = async (url: string, token: string) => {
     // 1. Testa a conexão (Ping)
@@ -233,6 +235,20 @@ function App() {
           />
         )}
 
+        {activeTab === 'forecast' && (
+          <ForecastPanel
+            url={appUrl}
+            token={secretToken}
+          />
+        )}
+
+        {activeTab === 'comparison' && (
+          <ComparisonPanel
+            url={appUrl}
+            token={secretToken}
+          />
+        )}
+
         {activeTab === 'history' && (
           <HistoryPanel
             url={appUrl}
@@ -254,10 +270,12 @@ function App() {
       }}>
         <div style={{
           display: 'flex',
-          justifyContent: 'space-around',
-          maxWidth: '600px',
+          justifyContent: 'flex-start',
+          gap: '4px',
+          maxWidth: '900px',
           margin: '0 auto',
-          padding: '0 16px'
+          padding: '0 12px',
+          overflowX: 'auto'
         }}>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -269,6 +287,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'dashboard' ? '600' : '400',
@@ -289,6 +310,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'new-expense' ? '600' : '400',
@@ -309,6 +333,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'cards' ? '600' : '400',
@@ -329,6 +356,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'budget' ? '600' : '400',
@@ -349,6 +379,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'settlement' ? '600' : '400',
@@ -357,6 +390,52 @@ function App() {
           >
             <Scale size={20} />
             Acerto
+          </button>
+
+          <button
+            onClick={() => setActiveTab('forecast')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'forecast' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'forecast' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <TrendingUp size={20} />
+            Previsão
+          </button>
+
+          <button
+            onClick={() => setActiveTab('comparison')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'comparison' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'comparison' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <BarChart2 size={20} />
+            Comparar
           </button>
 
           <button
@@ -369,6 +448,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'recurring' ? '600' : '400',
@@ -389,6 +471,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'history' ? '600' : '400',
