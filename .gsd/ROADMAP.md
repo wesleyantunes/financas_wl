@@ -146,7 +146,7 @@
 - [x] Plan 10.1: Orçamento por Categoria/Tag (completado em 2026-07-04)
 - [ ] Plan 10.2: Previsão de Saldo Futuro Avançada
 - [ ] Plan 10.3: Comparativo Mês a Mês / Ano a Ano
-- [ ] Plan 10.4: Divisão de Despesas Compartilhadas (Acerto de Contas)
+- [x] Plan 10.4: Divisão de Despesas Compartilhadas (Acerto de Contas) (completado em 2026-07-04)
 
 ---
 
@@ -175,7 +175,7 @@
 | 7     | ✅      | 1/1   | 2026-06-03 |
 | 8     | ✅      | 1/1   | 2026-06-05 |
 | 9     | ✅      | 1/1   | 2026-06-05 |
-| 10    | 🔄      | 1/4   | —          |
+| 10    | 🔄      | 2/4   | —          |
 | 11    | ⬜      | 0/2   | —          |
 
 ---

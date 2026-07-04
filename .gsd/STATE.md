@@ -1,5 +1,5 @@
 ---
-updated: 2026-07-04T00:00:00Z
+updated: 2026-07-04T01:00:00Z
 ---
 
 # Project State
@@ -8,25 +8,31 @@ updated: 2026-07-04T00:00:00Z
 
 **Milestone:** v1.1
 **Phase:** 10 (in progress)
-**Task:** Plan 10.1 completo
+**Task:** Plans 10.1 e 10.4 completos
 **Status:** Verified
-**Plan:** 10.1
+**Plan:** 10.4
 
 ## Last Action
 
-Implementado o Plan 10.1 (Orçamento por Categoria/Tag): nova aba `Orcamentos` e actions `getBudgets`/`addBudget`/`updateBudget`/`deleteBudget` no Apps Script ([scripts/google-apps-script.js](scripts/google-apps-script.js)); tipos e funções correspondentes em [src/services/api.ts](src/services/api.ts); novo componente [src/components/BudgetPanel.tsx](src/components/BudgetPanel.tsx) com formulário de cadastro, barras de progresso (verde/amarelo/vermelho) e edição/exclusão; nova aba de navegação "Orçamento" em [src/App.tsx](src/App.tsx). `npm run lint` e `npm run build` passaram limpos. Testado no navegador com backend mockado (fetch interceptado): soma de orçamento "Compartilhado" nas duas abas confirmada (Lazer: R$120 Wesley + R$200 Luana = R$320/300, barra vermelha), orçamento individual "Wesley" confirmado (Alimentação: R$450/500, barra amarela), fluxo de adicionar/editar/excluir validado. Não foi possível testar contra o Google Sheets real do usuário (sem credenciais).
+Implementado o Plan 10.4 (Divisão de Despesas Compartilhadas / Acerto de Contas), além do Plan 10.1 já concluído anteriormente:
+- **Schema:** nova 9ª coluna `Divisão Wesley (%)` nas abas `Despesas [Wesley]`/`[Luana]` (com migração automática de abas antigas na action `initialize`) e nova aba `Acertos` no Apps Script ([scripts/google-apps-script.js](scripts/google-apps-script.js)), com actions `getAcertos`/`addAcerto` e suporte à divisão em `updateInstallments`.
+- **API:** tipo `RawAcerto`, funções `getAcertos`/`addAcerto`, e campo de divisão em `RawExpense`/`updateInstallments` em [src/services/api.ts](src/services/api.ts).
+- **UI:** slider de divisão Wesley/Luana em [src/components/ExpenseForm.tsx](src/components/ExpenseForm.tsx) e no modal de edição de [src/components/HistoryPanel.tsx](src/components/HistoryPanel.tsx) (visível apenas quando "Compartilhado" está marcado, padrão 50/50); novo painel [src/components/SettlementPanel.tsx](src/components/SettlementPanel.tsx) ("Acerto") calculando saldo devedor por despesa (não 50/50 fixo) e com botão de quitação.
+- `npm run lint` e `npm run build` passaram limpos.
+- Testado no navegador com backend mockado: despesa de Aluguel R$1000 (60% Wesley) + Supermercado R$300 (50% Wesley) gerou corretamente "Luana deve pagar R$250,00 para Wesley" (valor diferente do que um split fixo 50/50 daria — R$350 — confirmando que a divisão por despesa está sendo respeitada). Fluxo de "Marcar como Quitado" validado.
+- Não foi possível testar contra o Google Sheets real do usuário (sem credenciais).
 
 ## Next Steps
 
-1. Validar manualmente com a planilha real (Wesley/Luana): reimplantar o Apps Script atualizado como nova versão do Web App para que a aba `Orcamentos` seja criada.
-2. Seguir com Plan 10.4 (Acerto de Contas) — inclui a migração de schema da 9ª coluna (`Divisão Wesley (%)`).
-3. Plans 10.2 e 10.3 (Previsão e Comparativo) podem rodar em paralelo, sem dependências entre si.
-4. Fase 11: Plan 11.1 (CSV/OFX) antes do Plan 11.2 (PDF), já que o PDF reaproveita a infraestrutura de revisão/dedup construída no 11.1.
+1. Validar manualmente com a planilha real (Wesley/Luana): reimplantar o Apps Script atualizado como nova versão do Web App para que a aba `Orcamentos`, a aba `Acertos` e a 9ª coluna de divisão sejam criadas/migradas.
+2. Seguir com Plans 10.2 (Previsão de Saldo Futuro Avançada) e 10.3 (Comparativo Mês a Mês/Ano a Ano) — podem rodar em paralelo, sem dependências entre si.
+3. Fase 11: Plan 11.1 (CSV/OFX) antes do Plan 11.2 (PDF), já que o PDF reaproveita a infraestrutura de revisão/dedup construída no 11.1.
 
-## Session Context (Plan 10.1)
+## Session Context (Fase 10)
 
 - `.claude/launch.json` foi criado neste projeto para permitir preview do dev server (`npm run dev` na porta 5173).
-- Lembrete importante para o usuário: o Google Apps Script publicado precisa ser **reimplantado** (Implantar → Gerenciar Implantações → Editar → Nova Versão) após colar o código atualizado de `scripts/google-apps-script.js`, senão a Web App continuará servindo a versão antiga sem as actions de orçamento.
+- Lembrete importante para o usuário: o Google Apps Script publicado precisa ser **reimplantado** (Implantar → Gerenciar Implantações → Editar → Nova Versão) após colar o código atualizado de `scripts/google-apps-script.js`, senão a Web App continuará servindo a versão antiga sem as novas actions/colunas.
+- Despesas compartilhadas lançadas pelo `CardInvoicePanel.tsx` (painel "Cartões") ainda não têm o controle de divisão (só `ExpenseForm.tsx` e `HistoryPanel.tsx` foram tocados, conforme escopo do Plan 10.4) — essas despesas assumem 50/50 por padrão na leitura. Se isso for um problema no uso real, vale abrir uma tarefa futura para estender o `CardInvoicePanel.tsx`.
 
 ## Active Decisions
 

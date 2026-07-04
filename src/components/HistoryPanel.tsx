@@ -37,6 +37,7 @@ interface NormalizedExpense {
   installmentGroupId: string;
   owner: 'Wesley' | 'Luana';
   paymentMethod: string;
+  wesleySplit: number;
   raw: RawExpense;
 }
 
@@ -67,6 +68,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
   const [editDate, setEditDate] = useState('');
   const [editTag, setEditTag] = useState('');
   const [editIsShared, setEditIsShared] = useState(false);
+  const [editWesleySplit, setEditWesleySplit] = useState(50);
   const [editPaymentMethod, setEditPaymentMethod] = useState<'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto'>('Pix');
   const [editApplyFuture, setEditApplyFuture] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -104,6 +106,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
           }
           
           const meioPagamento = isExpenseType ? (exp['Meio de Pagamento'] || exp.meioPagamento || 'Pix') : '';
+          const splitRaw = exp['Divisão Wesley (%)'] !== undefined ? exp['Divisão Wesley (%)'] : exp.divisaoWesley;
+          const wesleySplit = splitRaw !== undefined && splitRaw !== '' ? (Number(splitRaw) || 50) : 50;
 
           return {
             id: exp.ID || exp.id || '',
@@ -115,6 +119,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
             installmentGroupId: isExpenseType ? (exp['ID Parcelamento'] || '') : '',
             owner,
             paymentMethod: meioPagamento,
+            wesleySplit,
             raw: exp
           };
         });
@@ -185,6 +190,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
     setEditDate(exp.date);
     setEditTag(exp.tag);
     setEditIsShared(exp.isShared);
+    setEditWesleySplit(exp.wesleySplit);
     setEditPaymentMethod((exp.paymentMethod || 'Pix') as 'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto');
     setEditApplyFuture(false);
   };
@@ -224,7 +230,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
             Tag: editTag,
             Compartilhado: editIsShared,
             ['Meio de Pagamento']: editPaymentMethod,
-            meioPagamento: editPaymentMethod
+            meioPagamento: editPaymentMethod,
+            ['Divisão Wesley (%)']: editIsShared ? editWesleySplit : 50
           }
         );
       } else {
@@ -246,7 +253,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
             editTag,
             editIsShared,
             editingExpense.installmentGroupId,
-            editPaymentMethod
+            editPaymentMethod,
+            editIsShared ? editWesleySplit : ''
           ];
         } else {
           // Formato da linha de Recebimento: [id, date, description, value, tag]
@@ -794,8 +802,37 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ url, token }) => {
                     style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--color-primary)' }}
                   />
                   <label htmlFor="editIsShared" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>
-                    Despesa Compartilhada (Divisão 50/50)
+                    Despesa Compartilhada
                   </label>
+                </div>
+              )}
+
+              {/* Divisão da Despesa Compartilhada */}
+              {viewTab === 'expenses' && editIsShared && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  padding: '12px 14px',
+                  backgroundColor: 'var(--bg-primary)',
+                  border: '1px solid var(--border-glass)',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 500 }}>
+                    <span style={{ color: '#00b4d8' }}>Wesley {editWesleySplit}%</span>
+                    <span style={{ color: 'var(--text-muted)' }}>Divisão</span>
+                    <span style={{ color: '#ff007f' }}>Luana {100 - editWesleySplit}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={editWesleySplit}
+                    onChange={(e) => setEditWesleySplit(Number(e.target.value))}
+                    disabled={saving}
+                    style={{ width: '100%', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+                  />
                 </div>
               )}
 

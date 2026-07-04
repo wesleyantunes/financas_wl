@@ -48,7 +48,7 @@ function doPost(e) {
     
     // Ação: Inicializar Abas da Planilha
     if (action === 'initialize') {
-      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]', 'Recorrentes Recebimentos', 'Orcamentos'];
+      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]', 'Recorrentes Recebimentos', 'Orcamentos', 'Acertos'];
       const results = {};
 
       activeTabs.forEach(tabName => {
@@ -69,17 +69,20 @@ function doPost(e) {
           }
           results[tabName] = 'Criada';
         } else {
-          // Se a aba já existe, garantir que os cabeçalhos das despesas tenham Meio de Pagamento
+          // Se a aba já existe, garantir que os cabeçalhos das despesas tenham Meio de Pagamento e Divisão Wesley (%)
           if (tabName.startsWith('Despesas')) {
-            const range = sheet.getRange("A1:H1");
+            const range = sheet.getRange("A1:I1");
             const values = range.getValues()[0];
             if (values[7] !== 'Meio de Pagamento') {
               sheet.getRange("H1").setValue('Meio de Pagamento');
-              sheet.getRange("A1:H1").setFontWeight("bold")
-                                      .setBackground("#00a859")
-                                      .setFontColor("#ffffff")
-                                      .setHorizontalAlignment("center");
             }
+            if (values[8] !== 'Divisão Wesley (%)') {
+              sheet.getRange("I1").setValue('Divisão Wesley (%)');
+            }
+            sheet.getRange("A1:I1").setFontWeight("bold")
+                                    .setBackground("#00a859")
+                                    .setFontColor("#ffffff")
+                                    .setHorizontalAlignment("center");
           }
           results[tabName] = 'Já existe';
         }
@@ -214,6 +217,26 @@ function doPost(e) {
       }
 
       return createJsonResponse({ success: true, deleted: deleted });
+    }
+
+    // Ação: Obter Acertos de Contas Registrados
+    if (action === 'getAcertos') {
+      const sheet = spreadsheet.getSheetByName('Acertos');
+      const acertos = getRowsAsObjects(sheet, null);
+      return createJsonResponse({ success: true, acertos: acertos });
+    }
+
+    // Ação: Adicionar Acerto de Contas (marcar mês como quitado)
+    if (action === 'addAcerto') {
+      const acerto = requestData.acerto; // Array: [id, mesReferencia, valorAcertado, de, para, data, observacao]
+
+      if (!acerto || !acerto.length) {
+        return createJsonResponse({ success: false, error: 'Dados do acerto não especificados' }, 400);
+      }
+
+      const sheet = getOrCreateSheet(spreadsheet, 'Acertos');
+      sheet.appendRow(acerto);
+      return createJsonResponse({ success: true });
     }
 
     // Ação: Obter Dados do Mês e Regras Recorrentes
@@ -463,6 +486,13 @@ function doPost(e) {
                 values[i][7] = updatedFields.meioPagamento;
               }
             }
+            if (values[i].length > 8) {
+              if (updatedFields['Divisão Wesley (%)'] !== undefined) {
+                values[i][8] = Number(updatedFields['Divisão Wesley (%)']);
+              } else if (updatedFields.divisaoWesley !== undefined) {
+                values[i][8] = Number(updatedFields.divisaoWesley);
+              }
+            }
             updatedCount++;
           }
         }
@@ -544,8 +574,8 @@ function getOrCreateSheet(spreadsheet, tabName) {
   sheet = spreadsheet.insertSheet(tabName);
   
   if (tabName.startsWith('Despesas')) {
-    sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag', 'Compartilhado', 'ID Parcelamento', 'Meio de Pagamento']);
-    sheet.getRange("A1:H1").setFontWeight("bold")
+    sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag', 'Compartilhado', 'ID Parcelamento', 'Meio de Pagamento', 'Divisão Wesley (%)']);
+    sheet.getRange("A1:I1").setFontWeight("bold")
                             .setBackground("#00a859")
                             .setFontColor("#ffffff")
                             .setHorizontalAlignment("center");
@@ -574,6 +604,13 @@ function getOrCreateSheet(spreadsheet, tabName) {
   } else if (tabName === 'Orcamentos') {
     sheet.appendRow(['ID', 'Tag', 'Valor Limite', 'Dono', 'Ativo']);
     sheet.getRange("A1:E1").setFontWeight("bold")
+                            .setBackground("#00a859")
+                            .setFontColor("#ffffff")
+                            .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+  } else if (tabName === 'Acertos') {
+    sheet.appendRow(['ID', 'Mes Referencia', 'Valor Acertado', 'De', 'Para', 'Data', 'Observacao']);
+    sheet.getRange("A1:G1").setFontWeight("bold")
                             .setBackground("#00a859")
                             .setFontColor("#ffffff")
                             .setHorizontalAlignment("center");

@@ -13,6 +13,8 @@ export interface RawExpense {
   ['ID Parcelamento']?: string;
   ['Meio de Pagamento']?: string;
   meioPagamento?: string;
+  ['Divisão Wesley (%)']?: string | number;
+  divisaoWesley?: string | number;
 }
 
 export interface RawRecurringRule {
@@ -48,6 +50,23 @@ export interface RawBudget {
   dono?: string;
   Ativo?: boolean | string | number;
   ativo?: boolean | string | number;
+}
+
+export interface RawAcerto {
+  ID?: string;
+  id?: string;
+  ['Mes Referencia']?: string;
+  mesReferencia?: string;
+  ['Valor Acertado']?: string | number;
+  valorAcertado?: string | number;
+  De?: string;
+  de?: string;
+  Para?: string;
+  para?: string;
+  Data?: string | Date;
+  data?: string | Date;
+  Observacao?: string;
+  observacao?: string;
 }
 
 interface ApiRequestPayload {
@@ -186,6 +205,27 @@ export async function deleteBudget(
 }
 
 /**
+ * Busca todos os acertos de contas já registrados
+ */
+export async function getAcertos(
+  url: string,
+  token: string
+): Promise<{ success: boolean; acertos: RawAcerto[] }> {
+  return await request<{ success: boolean; acertos: RawAcerto[] }>(url, token, 'getAcertos');
+}
+
+/**
+ * Registra um acerto de contas (marca um mês como quitado) na aba Acertos
+ */
+export async function addAcerto(
+  url: string,
+  token: string,
+  acerto: unknown[]
+): Promise<unknown> {
+  return await request(url, token, 'addAcerto', { acerto });
+}
+
+/**
  * Busca todas as despesas mensais e regras recorrentes consolidadas de um determinado mês YYYY-MM
  */
 export async function getMonthData(
@@ -266,6 +306,8 @@ export async function updateInstallments(
     Compartilhado?: boolean;
     ['Meio de Pagamento']?: string;
     meioPagamento?: string;
+    ['Divisão Wesley (%)']?: number;
+    divisaoWesley?: number;
   }
 ): Promise<unknown> {
   return await request(url, token, 'updateInstallments', { tabName, installmentGroupId, baseDate, updatedFields });
