@@ -269,13 +269,15 @@ function App() {
         zIndex: 100
       }}>
         <div style={{
-          display: 'flex',
-          justifyContent: 'flex-start',
-          gap: '4px',
           maxWidth: '900px',
           margin: '0 auto',
           padding: '0 12px',
-          overflowX: 'auto'
+          overflowX: 'auto',
+          textAlign: 'center'
+        }}>
+        <div style={{
+          display: 'inline-flex',
+          gap: '4px'
         }}>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -483,6 +485,7 @@ function App() {
             <History size={20} />
             Histórico
           </button>
+        </div>
         </div>
       </div>
     </div>
