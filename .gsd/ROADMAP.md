@@ -1,5 +1,5 @@
-> **Current Phase:** 10 - Planejamento e Análise Financeira Avançada
-> **Status:** planning
+> **Current Phase:** None (Milestone v1.1 completa)
+> **Status:** completed
 
 ## Must-Haves (from SPEC)
 
@@ -20,11 +20,11 @@
 
 ## Must-Haves (Milestone v1.1)
 
-- [ ] Orçamento mensal por categoria/tag com acompanhamento visual do consumo.
-- [ ] Previsão de saldo futuro com horizonte configurável (30/60/90 dias).
-- [ ] Comparativo de gastos mês a mês (últimos 12 meses) e ano a ano.
-- [ ] Divisão/acerto de despesas compartilhadas entre Wesley e Luana, com registro de quitação.
-- [ ] Importação de extrato bancário (CSV) e fatura (OFX) com deduplicação e revisão humana.
+- [x] Orçamento mensal por categoria/tag com acompanhamento visual do consumo.
+- [x] Previsão de saldo futuro com horizonte configurável (30/60/90 dias).
+- [x] Comparativo de gastos mês a mês (últimos 12 meses) e ano a ano.
+- [x] Divisão/acerto de despesas compartilhadas entre Wesley e Luana, com registro de quitação.
+- [x] Importação de extrato bancário (CSV/OFX) e fatura de cartão (PDF) com deduplicação e revisão humana.
 
 ---
 
@@ -151,14 +151,14 @@
 ---
 
 ### Phase 11: Importação de Extrato Bancário e Fatura de Cartão
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 **Objective:** Permitir importar extratos (CSV/OFX) e faturas em PDF exportados do banco, com deduplicação contra lançamentos já existentes e revisão humana obrigatória antes da gravação em lote.
 **Depends on:** Phase 9
 **Requirements:** REQ-22
 
 **Plans:**
-- [ ] Plan 11.1: Importação de Extrato Bancário e Fatura de Cartão (CSV/OFX)
-- [ ] Plan 11.2: Importação de Fatura de Cartão em PDF (depende do Plan 11.1)
+- [x] Plan 11.1: Importação de Extrato Bancário e Fatura de Cartão (CSV/OFX) (completado em 2026-07-04)
+- [x] Plan 11.2: Importação de Fatura de Cartão em PDF (completado em 2026-07-04)
 
 ---
 
@@ -176,7 +176,7 @@
 | 8     | ✅      | 1/1   | 2026-06-05 |
 | 9     | ✅      | 1/1   | 2026-06-05 |
 | 10    | ✅      | 4/4   | 2026-07-04 |
-| 11    | ⬜      | 0/2   | —          |
+| 11    | ✅      | 2/2   | 2026-07-04 |
 
 ---
 
@@ -194,4 +194,4 @@
 | 8     | 2026-06-05 | 2026-06-05 | < 1 dia  |
 | 9     | 2026-06-05 | 2026-06-05 | < 1 dia  |
 | 10    | 2026-07-04 | 2026-07-04 | < 1 dia  |
-| 11    | —          | —          | —        |
+| 11    | 2026-07-04 | 2026-07-04 | < 1 dia  |

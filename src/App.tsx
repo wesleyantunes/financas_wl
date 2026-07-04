@@ -9,8 +9,9 @@ import { BudgetPanel } from './components/BudgetPanel';
 import { SettlementPanel } from './components/SettlementPanel';
 import { ForecastPanel } from './components/ForecastPanel';
 import { ComparisonPanel } from './components/ComparisonPanel';
+import { ImportPanel } from './components/ImportPanel';
 import { testConnection, initializeSpreadsheet } from './services/api';
-import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link, CreditCard, Target, Scale, TrendingUp, BarChart2 } from 'lucide-react';
+import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link, CreditCard, Target, Scale, TrendingUp, BarChart2, Upload } from 'lucide-react';
 
 function App() {
   const [initialCreds] = useState(() => {
@@ -38,7 +39,7 @@ function App() {
     const savedUser = localStorage.getItem('finance_active_user');
     return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'budget' | 'settlement' | 'forecast' | 'comparison' | 'recurring' | 'history'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'budget' | 'settlement' | 'forecast' | 'comparison' | 'import' | 'recurring' | 'history'>('dashboard');
 
   const handleConnect = async (url: string, token: string) => {
     // 1. Testa a conexão (Ping)
@@ -249,6 +250,13 @@ function App() {
           />
         )}
 
+        {activeTab === 'import' && (
+          <ImportPanel
+            url={appUrl}
+            token={secretToken}
+          />
+        )}
+
         {activeTab === 'history' && (
           <HistoryPanel
             url={appUrl}
@@ -438,6 +446,29 @@ function App() {
           >
             <BarChart2 size={20} />
             Comparar
+          </button>
+
+          <button
+            onClick={() => setActiveTab('import')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'import' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'import' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <Upload size={20} />
+            Importar
           </button>
 
           <button

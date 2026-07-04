@@ -1,48 +1,50 @@
 ---
-updated: 2026-07-04T02:00:00Z
+updated: 2026-07-04T03:00:00Z
 ---
 
 # Project State
 
 ## Current Position
 
-**Milestone:** v1.1
-**Phase:** 10 (completed)
-**Task:** Todos os 4 planos completos
+**Milestone:** v1.1 (completo)
+**Phase:** Nenhuma em andamento — Fases 10 e 11 completas
+**Task:** —
 **Status:** Verified
 **Plan:** —
 
 ## Last Action
 
-Fase 10 concluída (4/4 planos). Além dos Plans 10.1 (Orçamento) e 10.4 (Acerto de Contas) já registrados anteriormente, foram implementados:
+Fase 11 concluída (2/2 planos), fechando o milestone v1.1 (Fases 10 e 11, 6/6 planos no total):
 
-**Plan 10.2 — Previsão de Saldo Futuro Avançada:**
-- Nova action `getForecastData(horizonDays)` no Apps Script ([scripts/google-apps-script.js](scripts/google-apps-script.js)): retorna regras recorrentes ativas (com `mediaUltimasConfirmacoes` calculada para contas Variáveis a partir das 3 últimas confirmações passadas), lançamentos futuros já existentes dentro do horizonte, e o saldo realizado (recebimentos − despesas lançadas antes de hoje).
-- Novo painel [src/components/ForecastPanel.tsx](src/components/ForecastPanel.tsx): seletor de horizonte (30/60/90 dias), simulação dia a dia (evita duplicar recorrentes já lançados no mês), gráfico de área e tabela mês a mês.
+**Plan 11.1 — Importação de Extrato Bancário (CSV/OFX):**
+- `src/utils/importParsers.ts`: `parseCsvPreview`/`parseCsv` (com mapeamento de colunas) e `parseOfx` (blocos `<STMTTRN>`).
+- `src/utils/importDedup.ts`: `matchExisting` classifica cada transação importada como `novo`/`possivel_duplicata` (valor exato, data ±2 dias, descrição normalizada sem acento).
+- Novo painel [src/components/ImportPanel.tsx](src/components/ImportPanel.tsx) ("Importar"): upload → (mapeamento de colunas para CSV) → tabela de revisão com atribuição de Tag/Meio de Pagamento em lote → gravação via `addExpenses` existente (sem alteração de schema).
 
-**Plan 10.3 — Comparativo Mês a Mês/Ano a Ano:**
-- Nova action `getMonthlySummaries(meses[])` no Apps Script: agrega totais por mês/tag/dono no próprio servidor, sem devolver linhas cruas (evita N requests).
-- Novo painel [src/components/ComparisonPanel.tsx](src/components/ComparisonPanel.tsx): gráfico de barras dos últimos 12 meses (com opção de segmentar por dono) e comparação lado a lado de duas competências com variação % por tag.
+**Plan 11.2 — Importação de Fatura em PDF:**
+- `parsePdfFatura` em `importParsers.ts` usando `pdfjs-dist`: reconstrói linhas visuais agrupando itens de texto por coordenada Y, aplica heurística genérica de transação (data + descrição + valor) e tenta detectar a linha de "Total da fatura".
+- `ImportPanel.tsx` ganhou o modo PDF: banner de aviso, tabela de revisão totalmente editável (diferente do CSV/OFX, que é somente leitura), conferência da soma selecionada contra o total detectado, e botão de adicionar linha manual.
+- Dependências adicionadas: `papaparse` + `@types/papaparse`, `pdfjs-dist`.
 
-**Ajuste de navegação:** com a Fase 10 completa, o app chegou a 9 abas na navegação inferior. A barra de navegação em [src/App.tsx](src/App.tsx) foi ajustada de `justify-content: space-around` (que espremia e sobrepunha os rótulos) para uma faixa `overflow-x: auto` com botões de largura fixa — necessário para não quebrar a UI mobile-first ao adicionar as novas abas.
-
-`npm run lint` e `npm run build` passaram limpos. Testado no navegador com backend mockado:
-- Previsão: saldo 1000 + salário 3000 (dia 5) − Internet 100 (dia 15) − Energia 190 (média histórica, não os 200 estimados, dia 20) = **3710**, batendo exatamente com a tabela de detalhamento mensal.
-- Comparativo: variação % por tag e total calculados corretamente entre duas competências; gráfico de 12 meses renderizado com rótulos corretos.
-
-Não foi possível testar contra o Google Sheets real do usuário (sem credenciais).
+`npm run lint` e `npm run build` passaram limpos. Testado no navegador com backend mockado (ponta a ponta):
+- CSV: "Supermercado ABC" (já lançado) → corretamente marcado "Possível Duplicata"; "Posto Shell" (novo) → "Novo", pré-selecionado; importação final gravou só a transação nova, no formato de 9 colunas correto.
+- OFX: duas transações extraídas corretamente (datas, descrições, valores negativos de débito preservados na revisão); importação final converteu para valores positivos.
+- Heurística de linha de PDF testada com casos variados (com/sem ano, com/sem "R$", descrições com caracteres especiais) — identificou transações e a linha de total corretamente, rejeitando linhas não-transacionais (vencimento, número de cartão).
+- Não foi possível testar a extração de um PDF binário real (harness de teste não gera PDFs válidos) nem contra o Google Sheets real do usuário (sem credenciais) — recomendo testar com uma fatura real antes de confiar 100% na extração.
 
 ## Next Steps
 
-1. Validar manualmente com a planilha real (Wesley/Luana): reimplantar o Apps Script atualizado como nova versão do Web App para que a aba `Orcamentos`, a aba `Acertos` e a 9ª coluna de divisão sejam criadas/migradas, e as novas actions (`getForecastData`, `getMonthlySummaries`) fiquem disponíveis.
-2. Avaliar se a navegação inferior com 9 abas precisa de um redesenho mais estrutural (ex: agrupar em um menu "Mais") — o ajuste atual (scroll horizontal) resolve a sobreposição, mas pode não ser a melhor UX de longo prazo.
-3. Iniciar a Fase 11 (Importação): Plan 11.1 (CSV/OFX) antes do Plan 11.2 (PDF), já que o PDF reaproveita a infraestrutura de revisão/dedup construída no 11.1.
+1. Validar manualmente com a planilha real (Wesley/Luana): reimplantar o Apps Script atualizado (Implantar → Gerenciar Implantações → Nova Versão) para habilitar todas as actions novas das Fases 10 e 11.
+2. Testar a importação de PDF com uma fatura real de cartão (Nubank, Itaú, etc.) para validar a heurística de extração na prática — o layout real pode exigir ajustes na regex.
+3. Avaliar se a navegação inferior com 10 abas (após "Importar") precisa de um redesenho mais estrutural (ex: menu "Mais") — segue como scroll horizontal por enquanto.
+4. Milestone v1.1 está funcionalmente completo. Próximos passos dependem de novo feedback/prioridades do usuário.
 
-## Session Context (Fase 10)
+## Session Context
 
 - `.claude/launch.json` foi criado neste projeto para permitir preview do dev server (`npm run dev` na porta 5173).
-- Lembrete importante para o usuário: o Google Apps Script publicado precisa ser **reimplantado** (Implantar → Gerenciar Implantações → Editar → Nova Versão) após colar o código atualizado de `scripts/google-apps-script.js`, senão a Web App continuará servindo a versão antiga sem as novas actions/colunas.
-- Despesas compartilhadas lançadas pelo `CardInvoicePanel.tsx` (painel "Cartões") ainda não têm o controle de divisão (só `ExpenseForm.tsx` e `HistoryPanel.tsx` foram tocados, conforme escopo do Plan 10.4) — essas despesas assumem 50/50 por padrão na leitura. Se isso for um problema no uso real, vale abrir uma tarefa futura para estender o `CardInvoicePanel.tsx`.
+- Lembrete importante para o usuário: o Google Apps Script publicado precisa ser **reimplantado** após colar o código atualizado de `scripts/google-apps-script.js`, senão a Web App continua servindo a versão antiga sem as novas actions/colunas (`Orcamentos`, `Acertos`, `Divisão Wesley (%)`, `getForecastData`, `getMonthlySummaries`).
+- Despesas compartilhadas lançadas pelo `CardInvoicePanel.tsx` (painel "Cartões") ainda não têm o controle de divisão por despesa (só `ExpenseForm.tsx`/`HistoryPanel.tsx` foram tocados no Plan 10.4) — assumem 50/50 por padrão.
+- A importação (CSV/OFX/PDF) sempre grava como despesa individual (`Compartilhado = false`, divisão vazia) — se uma transação importada for na verdade compartilhada, o usuário precisa editá-la depois no Histórico.
 
 ## Active Decisions
 
