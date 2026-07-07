@@ -1,3 +1,4 @@
+import { detectInstallment } from './importParsers';
 import type { ParsedTransaction } from './importParsers';
 
 export interface DedupExpenseRef {
@@ -7,11 +8,13 @@ export interface DedupExpenseRef {
   value: number;
 }
 
-export type ImportStatus = 'novo' | 'possivel_duplicata';
+export type ImportStatus = 'novo' | 'possivel_duplicata' | 'continuacao_parcelamento';
 
 export interface ClassifiedTransaction extends ParsedTransaction {
   status: ImportStatus;
   matchId?: string;
+  /** Data da parcela relacionada já existente (só quando status === 'continuacao_parcelamento') */
+  relatedDate?: string;
 }
 
 const ACCENTED_CHARS = 'áàãâäéèêëíìîïóòõôöúùûüçñÁÀÃÂÄÉÈÊËÍÌÎÏÓÒÕÔÖÚÙÛÜÇÑ';
@@ -40,10 +43,15 @@ function daysBetween(a: string, b: string): number {
 }
 
 /**
- * Classifica cada transação importada como 'novo' ou 'possivel_duplicata' comparando contra
- * despesas já existentes: mesmo valor (abs), data dentro de ±2 dias, e descrição com similaridade
- * textual (substring após normalizar case/acentos). Nunca decide sozinho — apenas sinaliza para
- * revisão humana antes de qualquer gravação.
+ * Classifica cada transação importada comparando contra despesas já existentes:
+ * - 'possivel_duplicata': mesmo valor (abs), data dentro de ±2 dias, e descrição com
+ *   similaridade textual — provavelmente já foi lançada, desmarcada por padrão na revisão.
+ * - 'continuacao_parcelamento': mesma descrição-base (sem o marcador "NN/MM"), mas parcela
+ *   diferente da que já existe — sinaliza que há uma compra parcelada relacionada já lançada,
+ *   SEM excluir ou desmarcar (pode haver mais de uma compra distinta com o mesmo nome de
+ *   estabelecimento; a decisão de importar continua sendo do usuário).
+ * - 'novo': nenhuma relação encontrada.
+ * Nunca decide sozinho — apenas sinaliza para revisão humana antes de qualquer gravação.
  */
 export function matchExisting(
   imported: ParsedTransaction[],
@@ -53,7 +61,7 @@ export function matchExisting(
     const normImportedDesc = normalizeText(item.descricao);
     const importedAbsValue = Math.abs(item.valor);
 
-    const match = existing.find(exp => {
+    const exactMatch = existing.find(exp => {
       if (Math.abs(exp.value - importedAbsValue) > 0.01) return false;
       if (!item.data || daysBetween(exp.date, item.data) > 2) return false;
       const normExpDesc = normalizeText(exp.description);
@@ -61,10 +69,32 @@ export function matchExisting(
       return normExpDesc.includes(normImportedDesc) || normImportedDesc.includes(normExpDesc);
     });
 
-    return {
-      ...item,
-      status: match ? 'possivel_duplicata' : 'novo',
-      matchId: match?.id
-    };
+    if (exactMatch) {
+      return { ...item, status: 'possivel_duplicata', matchId: exactMatch.id };
+    }
+
+    const importedInstallment = detectInstallment(item.descricao);
+    const normImportedBase = normalizeText(importedInstallment ? importedInstallment.cleanDescricao : item.descricao);
+
+    const relatedMatch = existing.find(exp => {
+      const existingInstallment = detectInstallment(exp.description);
+      if (!existingInstallment) return false;
+
+      const normExpBase = normalizeText(existingInstallment.cleanDescricao);
+      if (!normExpBase || !normImportedBase) return false;
+      if (!normExpBase.includes(normImportedBase) && !normImportedBase.includes(normExpBase)) return false;
+
+      // Só sinaliza se a parcela detectada for realmente diferente da já existente
+      // (parcela igual + mesma descrição-base já teria caído no match exato acima).
+      if (importedInstallment && existingInstallment.info.current === importedInstallment.info.current) return false;
+
+      return true;
+    });
+
+    if (relatedMatch) {
+      return { ...item, status: 'continuacao_parcelamento', matchId: relatedMatch.id, relatedDate: relatedMatch.date };
+    }
+
+    return { ...item, status: 'novo' };
   });
 }

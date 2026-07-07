@@ -76,6 +76,39 @@ function parseValorBR(raw: string): number {
   return isNegative ? -val : val;
 }
 
+export interface InstallmentInfo {
+  current: number;
+  total: number;
+}
+
+// Aceita "NN/MM" cru (formato usual de faturas, ex: "Drogasil 3697 01/03") ou "(NN/MM)" entre
+// parênteses (formato já usado pelo lançamento manual do app, ex: "Drogasil 3697 (01/03)") —
+// permite reconhecer o mesmo padrão tanto em transações importadas quanto em despesas já existentes.
+const INSTALLMENT_PATTERN = /\(?\b(\d{1,2})\/(\d{1,2})\b\)?\s*$/;
+
+/**
+ * Detecta o padrão "NN/MM" (parcela atual/total) ao final de uma descrição — comum em faturas
+ * de cartão brasileiras para compras parceladas (ex: "Drogasil 3697 01/03"). Faturas mostram
+ * apenas a parcela do mês corrente; as demais aparecem em faturas futuras. Retorna a descrição
+ * já sem o marcador (para reaproveitar no sufixo "(NN/MM)" já usado pelo lançamento manual do app)
+ * e a informação de parcela, ou `null` se não identificado. Heurística sujeita a falsos positivos
+ * (ex: um código numérico coincidente) — por isso o valor detectado é sempre editável e a geração
+ * das parcelas restantes é sempre uma escolha explícita do usuário, nunca automática.
+ */
+export function detectInstallment(descricao: string): { info: InstallmentInfo; cleanDescricao: string } | null {
+  const match = descricao.match(INSTALLMENT_PATTERN);
+  if (!match) return null;
+
+  const current = parseInt(match[1], 10);
+  const total = parseInt(match[2], 10);
+  if (total < 2 || total > 48 || current < 1 || current > total) return null;
+
+  const cleanDescricao = descricao.slice(0, match.index).trim();
+  if (!cleanDescricao) return null;
+
+  return { info: { current, total }, cleanDescricao };
+}
+
 /**
  * Faz o parse inicial do CSV apenas para preview (primeiras linhas), sem aplicar mapeamento de colunas ainda.
  */

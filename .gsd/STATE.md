@@ -1,8 +1,32 @@
 ---
-updated: 2026-07-04T05:00:00Z
+updated: 2026-07-04T07:00:00Z
 ---
 
 # Project State
+
+## Melhoria pós-entrega: status "Continuação de Parcela" na Importação
+
+Pedido do usuário: ao importar a fatura do mês seguinte, se uma transação tiver o mesmo nome de uma já lançada mas parcela diferente (ex: "Drogasil 3697 02/03" este mês, já tendo "Drogasil 3697 (01/03)" do mês passado), ele quer um status/cor diferente — mas SEM excluir ou desmarcar automaticamente, já que pode haver mais de uma compra distinta com o mesmo nome de estabelecimento.
+
+**Implementado:**
+- Novo status `'continuacao_parcelamento'` em [src/utils/importDedup.ts](src/utils/importDedup.ts) (`ImportStatus`), distinto de `'novo'` e `'possivel_duplicata'`. `matchExisting` agora: (1) tenta a duplicata exata (valor+data+descrição, como antes); (2) se não achar, tenta relacionar por descrição-base (usando `detectInstallment` para remover o marcador "NN/MM" de ambos os lados) com parcela diferente da já existente.
+- `INSTALLMENT_PATTERN` em [src/utils/importParsers.ts](src/utils/importParsers.ts) generalizado para aceitar tanto "NN/MM" cru (formato de fatura) quanto "(NN/MM)" entre parênteses (formato já gravado pelo lançamento manual do app) — permite comparar a descrição de uma transação importada contra uma despesa já existente no Sheets.
+- [src/components/ImportPanel.tsx](src/components/ImportPanel.tsx): janela de busca de despesas existentes ampliada de "só os meses da importação atual" para "+ 11 meses anteriores" (paralelizado com `Promise.all`), já que a parcela relacionada normalmente está em um mês passado, não no mês da fatura sendo importada. Nova badge roxa "Continuação de parcela" com tooltip mostrando a data da parcela relacionada. **Seleção padrão:** `novo` e `continuacao_parcelamento` vêm marcados (são transações reais); só `possivel_duplicata` vem desmarcada.
+
+**Validado:** simulei uma despesa "Drogasil 3697 (01/03)" já lançada em 17/06/2026 e importei via CSV "Drogasil 3697 02/03" (17/07/2026, mesmo valor). Resultado: badge "Continuação de Parcela" (não confundida com duplicata), parcela detectada "2/3", tooltip "Parcela anterior lançada em 17/06/2026", e a linha permaneceu selecionada por padrão (botão "Importar 2 Lançamento(s)" incluindo essa linha + outra transação nova). Busca de 12 meses de histórico confirmada (2025-08 a 2026-07). `npm run lint`/`npm run build` limpos.
+
+## Melhoria pós-entrega: suporte a parcelamento na Importação
+
+Pedido do usuário: faturas de cartão mostram apenas a parcela do mês corrente de compras parceladas (ex: "Drogasil 3697 01/03"); as parcelas restantes só apareceriam em faturas dos meses seguintes, e ele precisava de um jeito de já lançar as parcelas futuras ao importar.
+
+**Implementado:**
+- `detectInstallment(descricao)` em [src/utils/importParsers.ts](src/utils/importParsers.ts): detecta o padrão "NN/MM" ao final da descrição (heurística com faixa de sanidade: total entre 2-48, atual ≤ total), retornando a descrição limpa (sem o marcador) e a parcela detectada.
+- [src/components/ImportPanel.tsx](src/components/ImportPanel.tsx): aplica a detecção em toda transação parseada (CSV/OFX/PDF), exibindo uma coluna "Parcelamento" com os campos atual/total (sempre editáveis, mesmo quando não detectados automaticamente) e um checkbox "Gerar restantes" — desmarcado por padrão (nunca decide automaticamente, mesma filosofia da DEC-007). Quando marcado, a importação gera N linhas (da parcela atual até a total) com o mesmo valor já conhecido da fatura (sem dividir), datas mensais incrementais, e o mesmo `installmentGroupId` + sufixo `(NN/MM)` usados pelo lançamento manual do app — permitindo edição/exclusão em lote depois pelo Histórico, igual a uma parcela lançada manualmente.
+- Validação antes de importar: bloqueia se alguma linha marcada para gerar parcelas tiver número de parcela atual maior que o total.
+
+**Ajuste de lint:** a lógica de geração de linhas precisou ficar inline dentro do handler `handleImport` (não em uma função `const` separada no corpo do componente) para satisfazer a regra `react-hooks/purity` do ESLint, que sinaliza qualquer função definida no escopo do componente que chame `Date.now()`/`Math.random()` — mesmo padrão já usado em `ExpenseForm.tsx`/`CardInvoicePanel.tsx`.
+
+**Validado:** testado com a linha real da fatura ("Drogasil 3697 01/03", R$57,07) via CSV — detecção correta (parcela "1/3", descrição limpa), e ao marcar "Gerar restantes" a importação gerou exatamente 3 linhas (17/06, 17/07, 17/08/2026), cada uma com R$57,07, mesmo `installmentGroupId`, e descrição sufixada `(01/03)`/`(02/03)`/`(03/03)`. `npm run lint`/`npm run build` limpos.
 
 ## Current Position
 

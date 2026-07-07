@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { getMonthData, addExpenses } from '../services/api';
 import type { RawExpense } from '../services/api';
-import { parseCsvPreview, parseCsv, parseOfx, parsePdfFatura } from '../utils/importParsers';
+import { parseCsvPreview, parseCsv, parseOfx, parsePdfFatura, detectInstallment } from '../utils/importParsers';
 import type { ParsedTransaction } from '../utils/importParsers';
 import { matchExisting } from '../utils/importDedup';
 import type { DedupExpenseRef } from '../utils/importDedup';
@@ -13,7 +13,8 @@ import {
   Trash2,
   Plus,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Repeat
 } from 'lucide-react';
 
 interface ImportPanelProps {
@@ -28,11 +29,15 @@ interface ReviewRow {
   data: string;
   descricao: string;
   valor: number;
-  status: 'novo' | 'possivel_duplicata';
+  status: 'novo' | 'possivel_duplicata' | 'continuacao_parcelamento';
   matchId?: string;
+  relatedDate?: string;
   selected: boolean;
   tag: string;
   paymentMethod: 'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto';
+  installmentCurrent: number | null;
+  installmentTotal: number | null;
+  generateRemaining: boolean;
 }
 
 const DEFAULT_TAGS = ['Alimentação', 'Lazer', 'Transporte', 'Saúde', 'Moradia', 'Educação', 'Supermercado', 'Veículo', 'Pets', 'Outros'];
@@ -87,8 +92,21 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
       return;
     }
 
-    const months = Array.from(new Set(parsed.map(t => t.data.substring(0, 7)).filter(Boolean)));
-    const existingRefs: DedupExpenseRef[] = [];
+    const parsedMonths = Array.from(new Set(parsed.map(t => t.data.substring(0, 7)).filter(Boolean))).sort();
+    if (parsedMonths.length === 0) {
+      setError('Nenhuma transação com data reconhecível no arquivo enviado.');
+      return;
+    }
+
+    // Além do(s) mês(es) da própria importação, busca os 11 meses anteriores ao mais antigo —
+    // necessário para detectar "continuação de parcelamento" (a parcela anterior de uma compra
+    // parcelada normalmente foi lançada em um mês passado, não no mês da fatura atual).
+    const monthsToFetch = new Set<string>(parsedMonths);
+    const [earliestY, earliestM] = parsedMonths[0].split('-').map(Number);
+    for (let i = 1; i <= 11; i++) {
+      const d = new Date(earliestY, earliestM - 1 - i, 1);
+      monthsToFetch.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
 
     const normalize = (list: RawExpense[]): DedupExpenseRef[] =>
       (list || []).map(exp => {
@@ -99,22 +117,32 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
         return { id: exp.ID || exp.id || '', date, description: exp.Descrição || exp.desc || '', value };
       });
 
-    for (const month of months) {
-      const res = await getMonthData(url, token, month);
+    const monthResults = await Promise.all(Array.from(monthsToFetch).map(month => getMonthData(url, token, month)));
+    const existingRefs: DedupExpenseRef[] = [];
+    monthResults.forEach(res => {
       existingRefs.push(...normalize(res.wesleyExpenses || []), ...normalize(res.luanaExpenses || []));
-    }
+    });
 
     const classified = matchExisting(parsed, existingRefs);
-    setReviewRows(classified.map(c => ({
-      data: c.data,
-      descricao: c.descricao,
-      valor: c.valor,
-      status: c.status,
-      matchId: c.matchId,
-      selected: c.status === 'novo' && c.valor > 0,
-      tag: DEFAULT_TAGS[0],
-      paymentMethod: 'Pix'
-    })));
+    setReviewRows(classified.map(c => {
+      const installment = detectInstallment(c.descricao);
+      return {
+        data: c.data,
+        descricao: installment ? installment.cleanDescricao : c.descricao,
+        valor: c.valor,
+        status: c.status,
+        matchId: c.matchId,
+        relatedDate: c.relatedDate,
+        // 'novo' e 'continuacao_parcelamento' vêm pré-selecionados (são transações reais, não
+        // duplicatas) — só 'possivel_duplicata' fica desmarcada por padrão.
+        selected: c.status !== 'possivel_duplicata' && c.valor > 0,
+        tag: DEFAULT_TAGS[0],
+        paymentMethod: 'Pix',
+        installmentCurrent: installment?.info.current ?? null,
+        installmentTotal: installment?.info.total ?? null,
+        generateRemaining: false
+      };
+    }));
     setStep('review');
   };
 
@@ -187,7 +215,10 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
       status: 'novo',
       selected: true,
       tag: DEFAULT_TAGS[0],
-      paymentMethod: 'Pix'
+      paymentMethod: 'Pix',
+      installmentCurrent: null,
+      installmentTotal: null,
+      generateRemaining: false
     }]);
   };
 
@@ -195,28 +226,63 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
   const selectedSum = selectedRows.reduce((acc, r) => acc + Math.abs(r.valor), 0);
   const totalMismatch = pdfTotalDetectado !== null && Math.abs(selectedSum - pdfTotalDetectado) > 0.01;
 
+  const countRowsForRow = (r: ReviewRow): number => {
+    if (!r.generateRemaining || !r.installmentCurrent || !r.installmentTotal || r.installmentCurrent > r.installmentTotal) return 1;
+    return r.installmentTotal - r.installmentCurrent + 1;
+  };
+  const totalRowsToImport = selectedRows.reduce((acc, r) => acc + countRowsForRow(r), 0);
+
+  const formatLocalDate = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const handleImport = async () => {
     if (selectedRows.length === 0) {
       alert('Selecione ao menos uma transação para importar.');
       return;
     }
 
+    const invalidInstallment = selectedRows.find(r =>
+      r.generateRemaining && (!r.installmentCurrent || !r.installmentTotal || r.installmentCurrent > r.installmentTotal)
+    );
+    if (invalidInstallment) {
+      alert('Existe uma linha marcada para gerar parcelas restantes com número de parcela inválido. Corrija a parcela atual/total (atual não pode ser maior que o total) antes de importar.');
+      return;
+    }
+
     setImporting(true);
     try {
-      const rows = selectedRows.map((r, i) => ([
-        `imp_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`,
-        r.data,
-        r.descricao,
-        Math.abs(r.valor),
-        r.tag,
-        false,
-        '',
-        r.paymentMethod,
-        ''
-      ]));
+      // Faturas mostram apenas a parcela do mês corrente (ex: "01/03"); as demais só apareceriam
+      // em faturas futuras. Quando o usuário marca "Gerar parcelas restantes", replicamos o mesmo
+      // valor já conhecido (a parcela já vem pronta da fatura, sem precisar dividir) em N linhas
+      // futuras com o mesmo padrão de agrupamento usado no lançamento manual (installmentGroupId +
+      // sufixo "(NN/MM)"), a partir da parcela atual até a última.
+      const rows: unknown[][] = [];
+
+      selectedRows.forEach((r, i) => {
+        const baseId = `imp_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`;
+
+        if (!r.generateRemaining || !r.installmentCurrent || !r.installmentTotal || r.installmentCurrent > r.installmentTotal) {
+          rows.push([baseId, r.data, r.descricao, Math.abs(r.valor), r.tag, false, '', r.paymentMethod, '']);
+          return;
+        }
+
+        const groupId = `imp_inst_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`;
+        const baseDate = new Date(`${r.data}T00:00:00`);
+
+        for (let n = r.installmentCurrent; n <= r.installmentTotal; n++) {
+          const targetDate = new Date(baseDate);
+          targetDate.setMonth(baseDate.getMonth() + (n - r.installmentCurrent));
+          const desc = `${r.descricao} (${String(n).padStart(2, '0')}/${String(r.installmentTotal).padStart(2, '0')})`;
+          rows.push([`${baseId}_${n}`, formatLocalDate(targetDate), desc, Math.abs(r.valor), r.tag, false, groupId, r.paymentMethod, '']);
+        }
+      });
 
       await addExpenses(url, token, `Despesas [${selectedOwner}]`, rows);
-      setToastMessage(`${rows.length} transação(ões) importada(s) com sucesso!`);
+      setToastMessage(`${rows.length} lançamento(s) importado(s) com sucesso!`);
       resetAll();
       setTimeout(() => setToastMessage(''), 4000);
     } catch (err) {
@@ -492,6 +558,7 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
                     <th style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'right' }}>Valor</th>
                     <th style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Tag</th>
                     <th style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Pagamento</th>
+                    <th style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Parcelamento</th>
                     {importMode === 'pdf' && <th style={{ padding: '10px 12px' }}></th>}
                   </tr>
                 </thead>
@@ -507,10 +574,20 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
                         />
                       </td>
                       <td style={{ padding: '10px 12px' }}>
-                        {row.status === 'novo' ? (
+                        {row.status === 'novo' && (
                           <span className="badge" style={{ backgroundColor: 'var(--color-primary-glow)', color: 'var(--color-primary)' }}>Novo</span>
-                        ) : (
+                        )}
+                        {row.status === 'possivel_duplicata' && (
                           <span className="badge" style={{ backgroundColor: 'var(--color-danger-glow)', color: 'var(--color-danger)' }}>Possível duplicata</span>
+                        )}
+                        {row.status === 'continuacao_parcelamento' && (
+                          <span
+                            className="badge"
+                            style={{ backgroundColor: 'hsla(265, 80%, 65%, 0.15)', color: 'hsl(265, 80%, 75%)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title={row.relatedDate ? `Parcela anterior lançada em ${row.relatedDate.split('-').reverse().join('/')}` : 'Compra parcelada relacionada já lançada'}
+                          >
+                            <Repeat size={11} /> Continuação de parcela
+                          </span>
                         )}
                       </td>
                       <td style={{ padding: '10px 12px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
@@ -576,6 +653,56 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
                           <option value="Boleto">Boleto</option>
                         </select>
                       </td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '150px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <input
+                              type="number"
+                              min="1"
+                              className="form-control"
+                              placeholder="Nº"
+                              value={row.installmentCurrent ?? ''}
+                              onChange={e => updateRow(i, { installmentCurrent: e.target.value ? Number(e.target.value) : null })}
+                              style={{ padding: '6px 8px', fontSize: '0.85rem', width: '52px' }}
+                              title="Parcela atual (nesta fatura)"
+                            />
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>/</span>
+                            <input
+                              type="number"
+                              min="2"
+                              className="form-control"
+                              placeholder="Total"
+                              value={row.installmentTotal ?? ''}
+                              onChange={e => updateRow(i, { installmentTotal: e.target.value ? Number(e.target.value) : null })}
+                              style={{ padding: '6px 8px', fontSize: '0.85rem', width: '56px' }}
+                              title="Total de parcelas da compra"
+                            />
+                          </div>
+                          <label style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '0.78rem',
+                            color: 'var(--text-muted)',
+                            cursor: row.installmentCurrent && row.installmentTotal ? 'pointer' : 'not-allowed'
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={row.generateRemaining}
+                              disabled={!row.installmentCurrent || !row.installmentTotal}
+                              onChange={e => updateRow(i, { generateRemaining: e.target.checked })}
+                              style={{ accentColor: 'var(--color-primary)', width: '14px', height: '14px', cursor: 'inherit' }}
+                            />
+                            <Repeat size={12} />
+                            Gerar restantes
+                          </label>
+                          {row.generateRemaining && row.installmentCurrent && row.installmentTotal && row.installmentTotal >= row.installmentCurrent && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--color-primary)' }}>
+                              +{row.installmentTotal - row.installmentCurrent} lançamento(s) futuro(s)
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       {importMode === 'pdf' && (
                         <td style={{ padding: '10px 12px' }}>
                           <button
@@ -596,7 +723,7 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
             <button className="btn btn-primary" onClick={handleImport} disabled={importing} style={{ width: 'auto', padding: '12px 24px' }}>
-              {importing ? 'Importando...' : `Importar ${selectedRows.length} Selecionado(s)`}
+              {importing ? 'Importando...' : `Importar ${totalRowsToImport} Lançamento(s)`}
             </button>
           </div>
         </div>
