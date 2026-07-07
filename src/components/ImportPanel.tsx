@@ -111,7 +111,7 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ url, token }) => {
       valor: c.valor,
       status: c.status,
       matchId: c.matchId,
-      selected: c.status === 'novo',
+      selected: c.status === 'novo' && c.valor > 0,
       tag: DEFAULT_TAGS[0],
       paymentMethod: 'Pix'
     })));

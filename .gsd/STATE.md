@@ -1,5 +1,5 @@
 ---
-updated: 2026-07-04T03:00:00Z
+updated: 2026-07-04T04:00:00Z
 ---
 
 # Project State
@@ -9,10 +9,27 @@ updated: 2026-07-04T03:00:00Z
 **Milestone:** v1.1 (completo)
 **Phase:** Nenhuma em andamento — Fases 10 e 11 completas
 **Task:** —
-**Status:** Verified
+**Status:** Verified (heurística de PDF corrigida com fatura real)
 **Plan:** —
 
-## Last Action
+## Last Action (correção pós-entrega, validada com fatura real)
+
+Usuário testou a importação de PDF com uma fatura real da Sicredi (Mastercard Black) e recebeu "Nenhuma transação reconhecida". Causa raiz identificada lendo o PDF real: a heurística original assumia data numérica `DD/MM` e sinal de negativo sempre depois do "R$" — mas faturas de cartão brasileiras (ao menos a da Sicredi) usam:
+1. Data com mês abreviado em português (`23/jun`, `17/mai`), não numérico.
+2. Sinal de crédito/pagamento ANTES do "R$" (`-R$ 75,00`, `-R$ 2.777,93`), não depois.
+
+Corrigido em [src/utils/importParsers.ts](src/utils/importParsers.ts):
+- `normalizeDateBR` agora aceita abreviações de mês (`jan`...`dez`) via `MONTH_ABBR_MAP`, além do formato numérico já suportado.
+- `parseValorBR` agora detecta o sinal de negativo em qualquer posição (antes ou depois do "R$"), não só no início da string.
+- `TRANSACTION_LINE_REGEX`/`VALUE_IN_LINE_REGEX` reconstruídos a partir de `DATE_TOKEN`/`VALUE_TOKEN` compartilhados, cobrindo os dois formatos de data e as duas posições de sinal.
+- Removido o `Math.abs()` forçado no retorno de `parsePdfFatura` — mantém o sinal original (consistente com `parseCsv`/`parseOfx`, que também preservam o sinal e deixam a exclusão de créditos para a revisão manual).
+- [src/components/ImportPanel.tsx](src/components/ImportPanel.tsx): seleção padrão na revisão agora exige `status === 'novo' && valor > 0`, evitando pré-selecionar créditos/pagamentos (que não são despesas) nos 3 modos de importação.
+
+**Validação:** testei a regex e os parsers diretamente contra as 9 linhas de transação reais da fatura enviada pelo usuário (incluindo os 2 créditos com sinal antes do "R$") — todas reconhecidas corretamente, com valores convertidos com precisão (`-R$ 2.777,93` → `-2777.93`). A linha de total correta ("Total fatura de julho R$ 3.427,45") foi identificada e não confundida com os subtotais por cartão ("Total cartão... R$ 1.596,17"), mesmo considerando que o cabeçalho em duas colunas da fatura pode mesclar linhas adjacentes na extração por coordenada Y (o primeiro valor monetário da linha mesclada continua sendo o correto, por construção). `npm run lint`/`npm run build` limpos.
+
+**Limitação conhecida:** não foi possível testar a extração binária completa (`pdfjs-dist` lendo o arquivo real) neste ambiente — a validação foi feita reconstruindo as linhas reais extraídas do PDF e testando a regex/parsers contra elas diretamente. Pedir ao usuário para testar novamente com o arquivo real na aplicação é o próximo passo.
+
+## Last Action (Fase 11)
 
 Fase 11 concluída (2/2 planos), fechando o milestone v1.1 (Fases 10 e 11, 6/6 planos no total):
 

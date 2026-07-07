@@ -17,10 +17,16 @@ export interface CsvColumnMapping {
   hasHeader: boolean;
 }
 
+const MONTH_ABBR_MAP: Record<string, string> = {
+  jan: '01', fev: '02', mar: '03', abr: '04', mai: '05', jun: '06',
+  jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12'
+};
+
 function normalizeDateBR(raw: string): string {
   const trimmed = raw.trim();
   if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.substring(0, 10);
 
+  // DD/MM/YYYY ou DD/MM (mês numérico)
   const fullMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{2,4})$/);
   if (fullMatch) {
     const [, d, m, yRaw] = fullMatch;
@@ -31,7 +37,16 @@ function normalizeDateBR(raw: string): string {
   const shortMatch = trimmed.match(/^(\d{2})\/(\d{2})$/);
   if (shortMatch) {
     const [, d, m] = shortMatch;
-    const y = new Date().getFullYear();
+    return `${new Date().getFullYear()}-${m}-${d}`;
+  }
+
+  // DD/mon ou DD/mon/YYYY (abreviação de mês em português, comum em faturas de cartão brasileiras)
+  const abbrMatch = trimmed.match(/^(\d{2})\/([a-zç]{3})(?:\/(\d{2,4}))?$/i);
+  if (abbrMatch) {
+    const [, d, monRaw, yRaw] = abbrMatch;
+    const m = MONTH_ABBR_MAP[monRaw.toLowerCase()];
+    if (!m) return '';
+    const y = yRaw ? (yRaw.length === 2 ? `20${yRaw}` : yRaw) : String(new Date().getFullYear());
     return `${y}-${m}-${d}`;
   }
 
@@ -39,10 +54,15 @@ function normalizeDateBR(raw: string): string {
 }
 
 function parseValorBR(raw: string): number {
-  let cleaned = raw.trim().replace(/^R\$\s*/i, '');
-  const isParenNegative = /^\(.*\)$/.test(cleaned);
-  const isNegative = /^-/.test(cleaned) || isParenNegative;
-  cleaned = cleaned.replace(/[()]/g, '').replace(/^-/, '').trim();
+  const trimmed = raw.trim();
+  const isNegative = /-/.test(trimmed) || /^\(.*\)$/.test(trimmed);
+
+  // Remove sinal, "R$" e parênteses independentemente da ordem em que aparecem
+  // (faturas de cartão costumam escrever créditos como "-R$ 75,00", com o sinal antes do símbolo).
+  let cleaned = trimmed
+    .replace(/R\$/gi, '')
+    .replace(/[()-]/g, '')
+    .trim();
 
   if (cleaned.includes(',') && cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
     cleaned = cleaned.replace(/\./g, '').replace(',', '.');
@@ -117,9 +137,13 @@ interface PdfTextItem {
   y: number;
 }
 
-const TRANSACTION_LINE_REGEX = /^(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})$/;
+const DATE_TOKEN = '\\d{2}\\/(?:\\d{2}|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(?:\\/\\d{2,4})?';
+// Valor monetário: aceita sinal antes OU depois do "R$" (faturas de cartão costumam escrever
+// créditos/pagamentos como "-R$ 75,00", com o sinal antes do símbolo, não depois).
+const VALUE_TOKEN = '(?:-\\s*)?(?:R\\$\\s*)?(?:-\\s*)?[\\d.]+,\\d{2}';
+const TRANSACTION_LINE_REGEX = new RegExp(`^(${DATE_TOKEN})\\s+(.+?)\\s+(${VALUE_TOKEN})$`, 'i');
 const TOTAL_LINE_REGEX = /total\s*(da|desta)?\s*fatura|valor\s*total/i;
-const VALUE_IN_LINE_REGEX = /(-?[\d.]+,\d{2})/;
+const VALUE_IN_LINE_REGEX = new RegExp(VALUE_TOKEN, 'i');
 
 /**
  * Extrai transações candidatas de um PDF de fatura via heurística genérica de linha
@@ -165,8 +189,8 @@ export async function parsePdfFatura(file: File): Promise<{ transacoes: ParsedTr
       const [, dateRaw, descricao, valorRaw] = match;
       const data = normalizeDateBR(dateRaw);
       const valor = parseValorBR(valorRaw);
-      if (data && !isNaN(valor)) {
-        transacoes.push({ data, descricao: descricao.trim(), valor: Math.abs(valor) });
+      if (data && !isNaN(valor) && valor !== 0) {
+        transacoes.push({ data, descricao: descricao.trim(), valor });
       }
       return;
     }
