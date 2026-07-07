@@ -1,5 +1,5 @@
 ---
-updated: 2026-07-04T04:00:00Z
+updated: 2026-07-04T05:00:00Z
 ---
 
 # Project State
@@ -9,8 +9,16 @@ updated: 2026-07-04T04:00:00Z
 **Milestone:** v1.1 (completo)
 **Phase:** Nenhuma em andamento — Fases 10 e 11 completas
 **Task:** —
-**Status:** Verified (heurística de PDF corrigida com fatura real)
+**Status:** Verified (2ª correção pós-entrega aplicada, ver abaixo)
 **Plan:** —
+
+## Last Action (2ª correção pós-entrega — crash "Cannot read properties of undefined (reading 'trim')")
+
+Ao corrigir a heurística de data/sinal (ver seção abaixo), reconstruí `VALUE_IN_LINE_REGEX` a partir de `VALUE_TOKEN` sem notar que o token não tinha grupo de captura — `VALUE_IN_LINE_REGEX = new RegExp(VALUE_TOKEN, 'i')` ficou sem parênteses de captura, então `line.match(VALUE_IN_LINE_REGEX)[1]` (usado para extrair o valor da linha de "Total da fatura") retornava `undefined`, e `parseValorBR(undefined)` quebrava em `raw.trim()`.
+
+Corrigido em [src/utils/importParsers.ts](src/utils/importParsers.ts): `VALUE_IN_LINE_REGEX = new RegExp(`(${VALUE_TOKEN})`, 'i')` (grupo de captura restaurado). Também endureci a extração de itens de texto do PDF (`textContent.items`) para filtrar apenas itens do tipo `TextItem` (com `str`/`transform`), descartando `TextMarkedContent` sem crashar — proteção preventiva para PDFs com marcação de acessibilidade, mesmo sem confirmação de que esse era o caso aqui.
+
+**Validação:** simulei o pipeline completo (mesma lógica do arquivo, incluindo o trecho que antes quebrava) contra as linhas reais da fatura do usuário — sem erro, com o total (R$ 3.427,45) e as 3 transações de teste (incluindo os 2 créditos negativos) extraídos corretamente. `npm run lint`/`npm run build` limpos.
 
 ## Last Action (correção pós-entrega, validada com fatura real)
 

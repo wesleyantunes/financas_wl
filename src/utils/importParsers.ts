@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import * as pdfjsLib from 'pdfjs-dist';
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
@@ -143,7 +144,7 @@ const DATE_TOKEN = '\\d{2}\\/(?:\\d{2}|jan|fev|mar|abr|mai|jun|jul|ago|set|out|n
 const VALUE_TOKEN = '(?:-\\s*)?(?:R\\$\\s*)?(?:-\\s*)?[\\d.]+,\\d{2}';
 const TRANSACTION_LINE_REGEX = new RegExp(`^(${DATE_TOKEN})\\s+(.+?)\\s+(${VALUE_TOKEN})$`, 'i');
 const TOTAL_LINE_REGEX = /total\s*(da|desta)?\s*fatura|valor\s*total/i;
-const VALUE_IN_LINE_REGEX = new RegExp(VALUE_TOKEN, 'i');
+const VALUE_IN_LINE_REGEX = new RegExp(`(${VALUE_TOKEN})`, 'i');
 
 /**
  * Extrai transações candidatas de um PDF de fatura via heurística genérica de linha
@@ -160,10 +161,9 @@ export async function parsePdfFatura(file: File): Promise<{ transacoes: ParsedTr
     const page = await pdf.getPage(pageNum);
     const textContent = await page.getTextContent();
 
-    const items: PdfTextItem[] = textContent.items.map((item) => {
-      const ti = item as { str: string; transform: number[] };
-      return { text: ti.str, x: ti.transform[4], y: ti.transform[5] };
-    });
+    const items: PdfTextItem[] = textContent.items
+      .filter((item): item is TextItem => typeof (item as TextItem).str === 'string' && Array.isArray((item as TextItem).transform))
+      .map((item) => ({ text: item.str, x: item.transform[4], y: item.transform[5] }));
 
     const linesMap = new Map<number, PdfTextItem[]>();
     items.forEach(item => {
