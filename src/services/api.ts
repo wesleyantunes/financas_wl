@@ -15,6 +15,8 @@ export interface RawExpense {
   ['ID Parcelamento']?: string;
   ['Meio de Pagamento']?: string;
   meioPagamento?: string;
+  ['Divisão Wesley (%)']?: string | number;
+  divisaoWesley?: string | number;
 }
 
 export interface RawRecurringRule {
@@ -72,6 +74,73 @@ interface DbRecurringRule {
   category_type?: string;
   active: boolean;
   created_at?: string;
+}
+
+export interface RawBudget {
+  ID?: string;
+  id?: string;
+  Tag?: string;
+  tag?: string;
+  ['Valor Limite']?: string | number;
+  valorLimite?: string | number;
+  Dono?: string;
+  dono?: string;
+  Ativo?: boolean | string | number;
+  ativo?: boolean | string | number;
+}
+
+export interface RawAcerto {
+  ID?: string;
+  id?: string;
+  ['Mes Referencia']?: string;
+  mesReferencia?: string;
+  ['Valor Acertado']?: string | number;
+  valorAcertado?: string | number;
+  De?: string;
+  de?: string;
+  Para?: string;
+  para?: string;
+  Data?: string | Date;
+  data?: string | Date;
+  Observacao?: string;
+  observacao?: string;
+}
+
+
+interface ApiRequestPayload {
+  token: string;
+  action: string;
+  [key: string]: unknown;
+}
+
+export async function request<T = unknown>(
+  url: string,
+  token: string,
+  action: string,
+  args: Record<string, unknown> = {}
+): Promise<T> {
+  if (!url) {
+    return { success: true } as T;
+  }
+  try {
+    const payload: ApiRequestPayload = {
+      token,
+      action,
+      ...args
+    };
+    const response = await fetch(url, {
+      method: 'POST',
+      mode: 'cors',
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      throw new Error(`Erro HTTP ${response.status}`);
+    }
+    return await response.json() as T;
+  } catch (error: unknown) {
+    console.error(`Erro de API na ação "${action}":`, error);
+    return { success: false } as T;
+  }
 }
 
 /**
@@ -197,6 +266,113 @@ export async function addRecurringRule(
     console.error('Erro ao adicionar regra recorrente:', error);
     throw error;
   }
+}
+
+export interface MonthlySummary {
+  mes: string;
+  totalDespesas: number;
+  totalRecebimentos: number;
+  porTag: Record<string, number>;
+  porDono: { Wesley: number; Luana: number };
+}
+
+export interface ForecastRecurringRule extends RawRecurringRule {
+  mediaUltimasConfirmacoes?: number | null;
+}
+
+/**
+ * Busca totais agregados (despesas, recebimentos, por tag, por dono) para uma lista de meses YYYY-MM
+ */
+export async function getMonthlySummaries(
+  url: string,
+  token: string,
+  meses: string[]
+): Promise<{ success: boolean; summaries: MonthlySummary[] }> {
+  return await request<{ success: boolean; summaries: MonthlySummary[] }>(url, token, 'getMonthlySummaries', { meses });
+}
+
+/**
+ * Busca os dados agregados necessários para projetar o saldo futuro dentro de um horizonte em dias
+ */
+export async function getForecastData(
+  url: string,
+  token: string,
+  horizonDays: number
+): Promise<{
+  success: boolean;
+  horizonDays: number;
+  saldoRealizado: number;
+  recurring: ForecastRecurringRule[];
+  recurringReceivables: RawRecurringRule[];
+  futureExpenses: RawExpense[];
+  futureReceivables: RawExpense[];
+}> {
+  return await request(url, token, 'getForecastData', { horizonDays });
+}
+
+/**
+ * Busca todos os orçamentos ativos por tag
+ */
+export async function getBudgets(
+  url: string,
+  token: string
+): Promise<{ success: boolean; budgets: RawBudget[] }> {
+  return await request<{ success: boolean; budgets: RawBudget[] }>(url, token, 'getBudgets');
+}
+
+/**
+ * Adiciona um novo orçamento na aba Orcamentos da planilha
+ */
+export async function addBudget(
+  url: string,
+  token: string,
+  budget: unknown[]
+): Promise<unknown> {
+  return await request(url, token, 'addBudget', { budget });
+}
+
+/**
+ * Atualiza os valores de um orçamento pelo ID
+ */
+export async function updateBudget(
+  url: string,
+  token: string,
+  id: string,
+  budget: unknown[]
+): Promise<unknown> {
+  return await request(url, token, 'updateBudget', { id, budget });
+}
+
+/**
+ * Exclui um orçamento pelo ID
+ */
+export async function deleteBudget(
+  url: string,
+  token: string,
+  id: string
+): Promise<unknown> {
+  return await request(url, token, 'deleteBudget', { id });
+}
+
+/**
+ * Busca todos os acertos de contas já registrados
+ */
+export async function getAcertos(
+  url: string,
+  token: string
+): Promise<{ success: boolean; acertos: RawAcerto[] }> {
+  return await request<{ success: boolean; acertos: RawAcerto[] }>(url, token, 'getAcertos');
+}
+
+/**
+ * Registra um acerto de contas (marca um mês como quitado) na aba Acertos
+ */
+export async function addAcerto(
+  url: string,
+  token: string,
+  acerto: unknown[]
+): Promise<unknown> {
+  return await request(url, token, 'addAcerto', { acerto });
 }
 
 /**
@@ -448,6 +624,8 @@ export async function updateInstallments(
     Compartilhado?: boolean;
     ['Meio de Pagamento']?: string;
     meioPagamento?: string;
+    ['Divisão Wesley (%)']?: number;
+    divisaoWesley?: number;
   }
 ): Promise<unknown> {
   void url;

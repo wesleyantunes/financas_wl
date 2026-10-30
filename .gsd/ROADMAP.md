@@ -1,4 +1,4 @@
-> **Current Phase:** None
+> **Current Phase:** None (Milestone v1.1 completa)
 > **Status:** completed
 
 ## Must-Haves (from SPEC)
@@ -17,6 +17,14 @@
 - [x] Listagem, edição e exclusão de receitas independentes no painel de Histórico.
 - [x] Diferenciação de Meios de Pagamento (Pix, Cartão Wesley, Cartão Luana, Boleto) com atribuição de cartões cruzados na reconciliação.
 - [x] Projeção de fluxo de caixa futuro baseado em recebimentos recorrentes.
+
+## Must-Haves (Milestone v1.1)
+
+- [x] Orçamento mensal por categoria/tag com acompanhamento visual do consumo.
+- [x] Previsão de saldo futuro com horizonte configurável (30/60/90 dias).
+- [x] Comparativo de gastos mês a mês (últimos 12 meses) e ano a ano.
+- [x] Divisão/acerto de despesas compartilhadas entre Wesley e Luana, com registro de quitação.
+- [x] Importação de extrato bancário (CSV/OFX) e fatura de cartão (PDF) com deduplicação e revisão humana.
 
 ---
 
@@ -128,6 +136,32 @@
 
 ---
 
+### Phase 10: Planejamento e Análise Financeira Avançada
+**Status:** ✅ Complete
+**Objective:** Adicionar 4 ferramentas de planejamento sobre os dados já existentes: orçamento por categoria, previsão de saldo futuro com horizonte configurável, comparativo mês a mês/ano a ano, e divisão/acerto de despesas compartilhadas entre Wesley e Luana.
+**Depends on:** Phase 9
+**Requirements:** REQ-18, REQ-19, REQ-20, REQ-21
+
+**Plans:**
+- [x] Plan 10.1: Orçamento por Categoria/Tag (completado em 2026-07-04)
+- [x] Plan 10.2: Previsão de Saldo Futuro Avançada (completado em 2026-07-04)
+- [x] Plan 10.3: Comparativo Mês a Mês / Ano a Ano (completado em 2026-07-04)
+- [x] Plan 10.4: Divisão de Despesas Compartilhadas (Acerto de Contas) (completado em 2026-07-04)
+
+---
+
+### Phase 11: Importação de Extrato Bancário e Fatura de Cartão
+**Status:** ✅ Complete
+**Objective:** Permitir importar extratos (CSV/OFX) e faturas em PDF exportados do banco, com deduplicação contra lançamentos já existentes e revisão humana obrigatória antes da gravação em lote.
+**Depends on:** Phase 9
+**Requirements:** REQ-22
+
+**Plans:**
+- [x] Plan 11.1: Importação de Extrato Bancário e Fatura de Cartão (CSV/OFX) (completado em 2026-07-04)
+- [x] Plan 11.2: Importação de Fatura de Cartão em PDF (completado em 2026-07-04)
+
+---
+
 ## Progress Summary
 
 | Phase | Status | Plans | Complete |
@@ -141,6 +175,8 @@
 | 7     | ✅      | 1/1   | 2026-06-03 |
 | 8     | ✅      | 1/1   | 2026-06-05 |
 | 9     | ✅      | 1/1   | 2026-06-05 |
+| 10    | ✅      | 4/4   | 2026-07-04 |
+| 11    | ✅      | 2/2   | 2026-07-04 |
 
 ---
 
@@ -157,3 +193,5 @@
 | 7     | 2026-06-03 | 2026-06-03 | < 1 dia  |
 | 8     | 2026-06-05 | 2026-06-05 | < 1 dia  |
 | 9     | 2026-06-05 | 2026-06-05 | < 1 dia  |
+| 10    | 2026-07-04 | 2026-07-04 | < 1 dia  |
+| 11    | 2026-07-04 | 2026-07-04 | < 1 dia  |

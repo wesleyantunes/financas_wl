@@ -48,13 +48,13 @@ function doPost(e) {
     
     // Ação: Inicializar Abas da Planilha
     if (action === 'initialize') {
-      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]', 'Recorrentes Recebimentos'];
+      const activeTabs = ['Despesas [Wesley]', 'Despesas [Luana]', 'Recorrentes', 'Recebimentos [Wesley]', 'Recebimentos [Luana]', 'Recorrentes Recebimentos', 'Orcamentos', 'Acertos'];
       const results = {};
-      
+
       activeTabs.forEach(tabName => {
         const sheetExists = !!spreadsheet.getSheetByName(tabName);
         const sheet = getOrCreateSheet(spreadsheet, tabName);
-        
+
         if (!sheetExists) {
           // Exemplos específicos pós criação
           if (tabName === 'Recorrentes') {
@@ -64,20 +64,25 @@ function doPost(e) {
           } else if (tabName === 'Recorrentes Recebimentos') {
             sheet.appendRow(['recrec_ex1', 'Salário Wesley', 5000.00, 5, 'Wesley', true]);
             sheet.appendRow(['recrec_ex2', 'Pró-labore Luana', 4000.00, 10, 'Luana', true]);
+          } else if (tabName === 'Orcamentos') {
+            sheet.appendRow(['orc_ex1', 'Lazer', 300.00, 'Compartilhado', true]);
           }
           results[tabName] = 'Criada';
         } else {
-          // Se a aba já existe, garantir que os cabeçalhos das despesas tenham Meio de Pagamento
+          // Se a aba já existe, garantir que os cabeçalhos das despesas tenham Meio de Pagamento e Divisão Wesley (%)
           if (tabName.startsWith('Despesas')) {
-            const range = sheet.getRange("A1:H1");
+            const range = sheet.getRange("A1:I1");
             const values = range.getValues()[0];
             if (values[7] !== 'Meio de Pagamento') {
               sheet.getRange("H1").setValue('Meio de Pagamento');
-              sheet.getRange("A1:H1").setFontWeight("bold")
-                                      .setBackground("#00a859")
-                                      .setFontColor("#ffffff")
-                                      .setHorizontalAlignment("center");
             }
+            if (values[8] !== 'Divisão Wesley (%)') {
+              sheet.getRange("I1").setValue('Divisão Wesley (%)');
+            }
+            sheet.getRange("A1:I1").setFontWeight("bold")
+                                    .setBackground("#00a859")
+                                    .setFontColor("#ffffff")
+                                    .setHorizontalAlignment("center");
           }
           results[tabName] = 'Já existe';
         }
@@ -125,6 +130,112 @@ function doPost(e) {
       const sheet = getOrCreateSheet(spreadsheet, tabName);
       
       sheet.appendRow(rule);
+      return createJsonResponse({ success: true });
+    }
+
+    // Ação: Obter Orçamentos Ativos
+    if (action === 'getBudgets') {
+      const sheet = spreadsheet.getSheetByName('Orcamentos');
+      const budgets = getRowsAsObjects(sheet, function(row) {
+        return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
+      });
+      return createJsonResponse({ success: true, budgets: budgets });
+    }
+
+    // Ação: Adicionar Orçamento
+    if (action === 'addBudget') {
+      const budget = requestData.budget; // Array: [id, tag, valorLimite, dono, ativo]
+
+      if (!budget || !budget.length) {
+        return createJsonResponse({ success: false, error: 'Dados do orçamento não especificados' }, 400);
+      }
+
+      const sheet = getOrCreateSheet(spreadsheet, 'Orcamentos');
+      sheet.appendRow(budget);
+      return createJsonResponse({ success: true });
+    }
+
+    // Ação: Atualizar Orçamento por ID
+    if (action === 'updateBudget') {
+      const id = requestData.id;
+      const budget = requestData.budget; // Array de novos valores
+
+      if (!id || !budget || !budget.length) {
+        return createJsonResponse({ success: false, error: 'ID ou dados do orçamento não especificados' }, 400);
+      }
+
+      const sheet = spreadsheet.getSheetByName('Orcamentos');
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "Orcamentos" não encontrada' }, 404);
+      }
+
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        return createJsonResponse({ success: false, error: 'Tabela vazia' }, 400);
+      }
+
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      let updated = false;
+
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === String(id)) {
+          sheet.getRange(i + 2, 1, 1, budget.length).setValues([budget]);
+          updated = true;
+          break;
+        }
+      }
+
+      return createJsonResponse({ success: true, updated: updated });
+    }
+
+    // Ação: Excluir Orçamento por ID
+    if (action === 'deleteBudget') {
+      const id = requestData.id;
+
+      if (!id) {
+        return createJsonResponse({ success: false, error: 'ID não especificado' }, 400);
+      }
+
+      const sheet = spreadsheet.getSheetByName('Orcamentos');
+      if (!sheet) {
+        return createJsonResponse({ success: false, error: 'Aba "Orcamentos" não encontrada' }, 404);
+      }
+
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        return createJsonResponse({ success: false, error: 'Tabela vazia' }, 400);
+      }
+
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      let deleted = false;
+
+      for (let i = ids.length - 1; i >= 0; i--) {
+        if (String(ids[i][0]) === String(id)) {
+          sheet.deleteRow(i + 2);
+          deleted = true;
+        }
+      }
+
+      return createJsonResponse({ success: true, deleted: deleted });
+    }
+
+    // Ação: Obter Acertos de Contas Registrados
+    if (action === 'getAcertos') {
+      const sheet = spreadsheet.getSheetByName('Acertos');
+      const acertos = getRowsAsObjects(sheet, null);
+      return createJsonResponse({ success: true, acertos: acertos });
+    }
+
+    // Ação: Adicionar Acerto de Contas (marcar mês como quitado)
+    if (action === 'addAcerto') {
+      const acerto = requestData.acerto; // Array: [id, mesReferencia, valorAcertado, de, para, data, observacao]
+
+      if (!acerto || !acerto.length) {
+        return createJsonResponse({ success: false, error: 'Dados do acerto não especificados' }, 400);
+      }
+
+      const sheet = getOrCreateSheet(spreadsheet, 'Acertos');
+      sheet.appendRow(acerto);
       return createJsonResponse({ success: true });
     }
 
@@ -179,6 +290,188 @@ function doPost(e) {
         luanaExpenses: luanaExpenses,
         wesleyReceivables: wesleyReceivables,
         luanaReceivables: luanaReceivables
+      });
+    }
+
+    // Ação: Obter Totais Agregados por Mês (Comparativo)
+    if (action === 'getMonthlySummaries') {
+      const meses = requestData.meses; // Array de strings 'YYYY-MM'
+
+      if (!meses || !meses.length) {
+        return createJsonResponse({ success: false, error: 'Lista de meses não especificada' }, 400);
+      }
+
+      const wesleySheet = spreadsheet.getSheetByName('Despesas [Wesley]');
+      const luanaSheet = spreadsheet.getSheetByName('Despesas [Luana]');
+      const wesleyIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Wesley]');
+      const luanaIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Luana]');
+
+      const wesleyRows = getRowsAsObjects(wesleySheet, null);
+      const luanaRows = getRowsAsObjects(luanaSheet, null);
+      const wesleyIncomeRows = getRowsAsObjects(wesleyIncomeSheet, null);
+      const luanaIncomeRows = getRowsAsObjects(luanaIncomeSheet, null);
+
+      function monthOfRow(row) {
+        if (!row.Data) return '';
+        if (row.Data instanceof Date) {
+          const y = row.Data.getFullYear();
+          const m = String(row.Data.getMonth() + 1).padStart(2, '0');
+          return y + '-' + m;
+        }
+        return String(row.Data).substring(0, 7);
+      }
+
+      function rowValue(row) {
+        const valRaw = row.Valor !== undefined ? row.Valor : 0;
+        return typeof valRaw === 'number' ? valRaw : (parseFloat(valRaw) || 0);
+      }
+
+      const summaries = meses.map(function(mes) {
+        const porTag = {};
+        const porDono = { Wesley: 0, Luana: 0 };
+        let totalDespesas = 0;
+        let totalRecebimentos = 0;
+
+        [{ rows: wesleyRows, dono: 'Wesley' }, { rows: luanaRows, dono: 'Luana' }].forEach(function(entry) {
+          entry.rows.forEach(function(row) {
+            if (monthOfRow(row) !== mes) return;
+            const valor = rowValue(row);
+            totalDespesas += valor;
+            porDono[entry.dono] += valor;
+            const tag = row.Tag || 'Outros';
+            porTag[tag] = (porTag[tag] || 0) + valor;
+          });
+        });
+
+        wesleyIncomeRows.concat(luanaIncomeRows).forEach(function(row) {
+          if (monthOfRow(row) !== mes) return;
+          totalRecebimentos += rowValue(row);
+        });
+
+        return {
+          mes: mes,
+          totalDespesas: totalDespesas,
+          totalRecebimentos: totalRecebimentos,
+          porTag: porTag,
+          porDono: porDono
+        };
+      });
+
+      return createJsonResponse({ success: true, summaries: summaries });
+    }
+
+    // Ação: Obter Dados para Previsão de Saldo Futuro
+    if (action === 'getForecastData') {
+      const horizonDays = requestData.horizonDays || 30;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + horizonDays);
+
+      const recurringSheet = spreadsheet.getSheetByName('Recorrentes');
+      const recurringReceivablesSheet = spreadsheet.getSheetByName('Recorrentes Recebimentos');
+      const wesleySheet = spreadsheet.getSheetByName('Despesas [Wesley]');
+      const luanaSheet = spreadsheet.getSheetByName('Despesas [Luana]');
+      const wesleyIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Wesley]');
+      const luanaIncomeSheet = spreadsheet.getSheetByName('Recebimentos [Luana]');
+
+      const recurring = getRowsAsObjects(recurringSheet, function(row) {
+        return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
+      });
+      const recurringReceivables = getRowsAsObjects(recurringReceivablesSheet, function(row) {
+        return row.Ativo === true || row.Ativo === 'TRUE' || row.Ativo === 1;
+      });
+
+      const wesleyAllExpenses = getRowsAsObjects(wesleySheet, null);
+      const luanaAllExpenses = getRowsAsObjects(luanaSheet, null);
+      const wesleyAllReceivables = getRowsAsObjects(wesleyIncomeSheet, null);
+      const luanaAllReceivables = getRowsAsObjects(luanaIncomeSheet, null);
+
+      function parseRowDate(row) {
+        if (!row.Data) return null;
+        if (row.Data instanceof Date) return row.Data;
+        const parts = String(row.Data).split('T')[0].split('-');
+        if (parts.length < 3) return null;
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+
+      function rowValueF(row) {
+        const valRaw = row.Valor !== undefined ? row.Valor : 0;
+        return typeof valRaw === 'number' ? valRaw : (parseFloat(valRaw) || 0);
+      }
+
+      // Média das últimas 3 confirmações passadas com a mesma descrição (para contas Variáveis)
+      function mediaUltimasConfirmacoes(descricao) {
+        const descLower = String(descricao || '').toLowerCase().trim();
+        if (!descLower) return null;
+
+        const matches = wesleyAllExpenses.concat(luanaAllExpenses).filter(function(exp) {
+          const expDesc = String(exp.Descrição || '').toLowerCase().trim();
+          const expDate = parseRowDate(exp);
+          return expDesc.indexOf(descLower) !== -1 && expDate && expDate.getTime() < today.getTime();
+        });
+
+        matches.sort(function(a, b) {
+          return parseRowDate(b).getTime() - parseRowDate(a).getTime();
+        });
+
+        const top3 = matches.slice(0, 3);
+        if (!top3.length) return null;
+
+        const sum = top3.reduce(function(acc, exp) {
+          return acc + rowValueF(exp);
+        }, 0);
+
+        return sum / top3.length;
+      }
+
+      const recurringWithEstimate = recurring.map(function(rule) {
+        const isVariable = rule.Tipo === 'Variável';
+        const media = isVariable ? mediaUltimasConfirmacoes(rule.Descrição) : null;
+        const result = {};
+        for (const key in rule) {
+          if (Object.prototype.hasOwnProperty.call(rule, key)) {
+            result[key] = rule[key];
+          }
+        }
+        result.mediaUltimasConfirmacoes = media;
+        return result;
+      });
+
+      // Lançamentos futuros já existentes dentro do horizonte pedido (evita duplicar na projeção do cliente)
+      function futureInRange(rows) {
+        return rows.filter(function(row) {
+          const d = parseRowDate(row);
+          return d && d.getTime() >= today.getTime() && d.getTime() <= endDate.getTime();
+        });
+      }
+
+      const futureExpenses = futureInRange(wesleyAllExpenses).concat(futureInRange(luanaAllExpenses));
+      const futureReceivables = futureInRange(wesleyAllReceivables).concat(futureInRange(luanaAllReceivables));
+
+      // Saldo realizado: tudo que já foi lançado antes de hoje
+      function sumBefore(rows) {
+        return rows.reduce(function(acc, row) {
+          const d = parseRowDate(row);
+          if (d && d.getTime() < today.getTime()) {
+            return acc + rowValueF(row);
+          }
+          return acc;
+        }, 0);
+      }
+
+      const realizedExpenses = sumBefore(wesleyAllExpenses.concat(luanaAllExpenses));
+      const realizedReceivables = sumBefore(wesleyAllReceivables.concat(luanaAllReceivables));
+
+      return createJsonResponse({
+        success: true,
+        horizonDays: horizonDays,
+        saldoRealizado: realizedReceivables - realizedExpenses,
+        recurring: recurringWithEstimate,
+        recurringReceivables: recurringReceivables,
+        futureExpenses: futureExpenses,
+        futureReceivables: futureReceivables
       });
     }
 
@@ -375,6 +668,13 @@ function doPost(e) {
                 values[i][7] = updatedFields.meioPagamento;
               }
             }
+            if (values[i].length > 8) {
+              if (updatedFields['Divisão Wesley (%)'] !== undefined) {
+                values[i][8] = Number(updatedFields['Divisão Wesley (%)']);
+              } else if (updatedFields.divisaoWesley !== undefined) {
+                values[i][8] = Number(updatedFields.divisaoWesley);
+              }
+            }
             updatedCount++;
           }
         }
@@ -456,8 +756,8 @@ function getOrCreateSheet(spreadsheet, tabName) {
   sheet = spreadsheet.insertSheet(tabName);
   
   if (tabName.startsWith('Despesas')) {
-    sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag', 'Compartilhado', 'ID Parcelamento', 'Meio de Pagamento']);
-    sheet.getRange("A1:H1").setFontWeight("bold")
+    sheet.appendRow(['ID', 'Data', 'Descrição', 'Valor', 'Tag', 'Compartilhado', 'ID Parcelamento', 'Meio de Pagamento', 'Divisão Wesley (%)']);
+    sheet.getRange("A1:I1").setFontWeight("bold")
                             .setBackground("#00a859")
                             .setFontColor("#ffffff")
                             .setHorizontalAlignment("center");
@@ -483,7 +783,21 @@ function getOrCreateSheet(spreadsheet, tabName) {
                             .setFontColor("#ffffff")
                             .setHorizontalAlignment("center");
     sheet.setFrozenRows(1);
+  } else if (tabName === 'Orcamentos') {
+    sheet.appendRow(['ID', 'Tag', 'Valor Limite', 'Dono', 'Ativo']);
+    sheet.getRange("A1:E1").setFontWeight("bold")
+                            .setBackground("#00a859")
+                            .setFontColor("#ffffff")
+                            .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+  } else if (tabName === 'Acertos') {
+    sheet.appendRow(['ID', 'Mes Referencia', 'Valor Acertado', 'De', 'Para', 'Data', 'Observacao']);
+    sheet.getRange("A1:G1").setFontWeight("bold")
+                            .setBackground("#00a859")
+                            .setFontColor("#ffffff")
+                            .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
   }
-  
+
   return sheet;
 }

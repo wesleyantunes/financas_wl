@@ -18,6 +18,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAGS[0]);
   const [isShared, setIsShared] = useState(false);
+  const [wesleySplit, setWesleySplit] = useState(50);
   const [isInstallment, setIsInstallment] = useState(false);
   const [installments, setInstallments] = useState('2');
   const [paymentMethod, setPaymentMethod] = useState<'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto'>('Pix');
@@ -103,7 +104,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
             selectedTag,
             isShared,
             installmentGroupId,
-            paymentMethod
+            paymentMethod,
+            isShared ? wesleySplit : ''
           ]);
         }
       } else {
@@ -116,7 +118,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
           selectedTag,
           isShared,
           "", // Sem ID de parcelamento
-          paymentMethod
+          paymentMethod,
+          isShared ? wesleySplit : ''
         ]);
       }
 
@@ -138,6 +141,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
       setDate(new Date().toISOString().split('T')[0]);
       setSelectedTag(entryType === 'expense' ? DEFAULT_TAGS[0] : RECEIVABLE_TAGS[0]);
       setIsShared(false);
+      setWesleySplit(50);
       setIsInstallment(false);
       setInstallments('2');
       setPaymentMethod('Pix');
@@ -427,6 +431,36 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ url, token, currentUse
                   Parcelado
                 </span>
               </label>
+            </div>
+          )}
+
+          {/* Divisão da Despesa Compartilhada */}
+          {entryType === 'expense' && isShared && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              padding: '14px 16px',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-glass)',
+              borderRadius: '8px',
+              animation: 'fade-in 0.2s ease'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 500 }}>
+                <span style={{ color: '#00b4d8' }}>Wesley {wesleySplit}%</span>
+                <span style={{ color: 'var(--text-muted)' }}>Divisão</span>
+                <span style={{ color: '#ff007f' }}>Luana {100 - wesleySplit}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={wesleySplit}
+                onChange={(e) => setWesleySplit(Number(e.target.value))}
+                disabled={submitting}
+                style={{ width: '100%', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+              />
             </div>
           )}
 

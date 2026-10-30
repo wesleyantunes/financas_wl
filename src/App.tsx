@@ -7,7 +7,12 @@ import { RecurringPanel } from './components/RecurringPanel';
 import { Dashboard } from './components/Dashboard';
 import { HistoryPanel } from './components/HistoryPanel';
 import { CardInvoicePanel } from './components/CardInvoicePanel';
-import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, CreditCard } from 'lucide-react';
+import { BudgetPanel } from './components/BudgetPanel';
+import { SettlementPanel } from './components/SettlementPanel';
+import { ForecastPanel } from './components/ForecastPanel';
+import { ComparisonPanel } from './components/ComparisonPanel';
+import { ImportPanel } from './components/ImportPanel';
+import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, CreditCard, Target, Scale, TrendingUp, BarChart2, Upload } from 'lucide-react';
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -16,7 +21,7 @@ function App() {
     const savedUser = localStorage.getItem('finance_active_user');
     return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'recurring' | 'history'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'budget' | 'settlement' | 'forecast' | 'comparison' | 'import' | 'recurring' | 'history'>('dashboard');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -175,6 +180,36 @@ function App() {
           />
         )}
 
+        {activeTab === 'budget' && (
+          <BudgetPanel
+            url="" token=""
+          />
+        )}
+
+        {activeTab === 'settlement' && (
+          <SettlementPanel
+            url="" token=""
+          />
+        )}
+
+        {activeTab === 'forecast' && (
+          <ForecastPanel
+            url="" token=""
+          />
+        )}
+
+        {activeTab === 'comparison' && (
+          <ComparisonPanel
+            url="" token=""
+          />
+        )}
+
+        {activeTab === 'import' && (
+          <ImportPanel
+            url="" token=""
+          />
+        )}
+
         {activeTab === 'history' && (
           <HistoryPanel
             url=""
@@ -195,11 +230,15 @@ function App() {
         zIndex: 100
       }}>
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-around',
-          maxWidth: '600px',
+          maxWidth: '900px',
           margin: '0 auto',
-          padding: '0 16px'
+          padding: '0 12px',
+          overflowX: 'auto',
+          textAlign: 'center'
+        }}>
+        <div style={{
+          display: 'inline-flex',
+          gap: '4px'
         }}>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -211,6 +250,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'dashboard' ? '600' : '400',
@@ -231,6 +273,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'new-expense' ? '600' : '400',
@@ -251,6 +296,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'cards' ? '600' : '400',
@@ -259,6 +307,121 @@ function App() {
           >
             <CreditCard size={20} />
             Cartões
+          </button>
+
+          <button
+            onClick={() => setActiveTab('budget')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'budget' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'budget' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <Target size={20} />
+            Orçamento
+          </button>
+
+          <button
+            onClick={() => setActiveTab('settlement')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'settlement' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'settlement' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <Scale size={20} />
+            Acerto
+          </button>
+
+          <button
+            onClick={() => setActiveTab('forecast')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'forecast' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'forecast' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <TrendingUp size={20} />
+            Previsão
+          </button>
+
+          <button
+            onClick={() => setActiveTab('comparison')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'comparison' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'comparison' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <BarChart2 size={20} />
+            Comparar
+          </button>
+
+          <button
+            onClick={() => setActiveTab('import')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: activeTab === 'import' ? 'var(--color-primary)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
+              gap: '4px',
+              fontSize: '0.75rem',
+              fontWeight: activeTab === 'import' ? '600' : '400',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            <Upload size={20} />
+            Importar
           </button>
 
           <button
@@ -271,6 +434,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'recurring' ? '600' : '400',
@@ -291,6 +457,9 @@ function App() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              flexShrink: 0,
+              minWidth: '64px',
+              padding: '4px 6px',
               gap: '4px',
               fontSize: '0.75rem',
               fontWeight: activeTab === 'history' ? '600' : '400',
@@ -300,6 +469,7 @@ function App() {
             <History size={20} />
             Histórico
           </button>
+        </div>
         </div>
       </div>
     </div>
