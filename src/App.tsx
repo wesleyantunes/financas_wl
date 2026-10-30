@@ -1,76 +1,40 @@
-import { useState } from 'react';
-import { SetupScreen } from './components/SetupScreen';
+import { useState, useEffect } from 'react';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from './services/supabase';
+import { AuthScreen } from './components/AuthScreen';
 import { ExpenseForm } from './components/ExpenseForm';
 import { RecurringPanel } from './components/RecurringPanel';
 import { Dashboard } from './components/Dashboard';
 import { HistoryPanel } from './components/HistoryPanel';
 import { CardInvoicePanel } from './components/CardInvoicePanel';
-import { testConnection, initializeSpreadsheet } from './services/api';
-import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, Link, CreditCard } from 'lucide-react';
+import { Wallet, LogOut, PlusCircle, LayoutDashboard, Calendar, History, CreditCard } from 'lucide-react';
 
 function App() {
-  const [initialCreds] = useState(() => {
-    const hash = window.location.hash.substring(1);
-    if (hash) {
-      const params = new URLSearchParams(hash);
-      const url = params.get('url');
-      const token = params.get('token');
-      if (url && token) {
-        localStorage.setItem('finance_app_url', url);
-        localStorage.setItem('finance_secret_token', token);
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-        return { url, token, auth: true };
-      }
-    }
-    const savedUrl = localStorage.getItem('finance_app_url') || '';
-    const savedToken = localStorage.getItem('finance_secret_token') || '';
-    return { url: savedUrl, token: savedToken, auth: !!(savedUrl && savedToken) };
-  });
-
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(initialCreds.auth);
-  const [appUrl, setAppUrl] = useState<string>(initialCreds.url);
-  const [secretToken, setSecretToken] = useState<string>(initialCreds.token);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
   const [currentUser, setCurrentUser] = useState<'Wesley' | 'Luana'>(() => {
     const savedUser = localStorage.getItem('finance_active_user');
     return (savedUser === 'Wesley' || savedUser === 'Luana') ? savedUser : 'Wesley';
   });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'new-expense' | 'cards' | 'recurring' | 'history'>('dashboard');
 
-  const handleConnect = async (url: string, token: string) => {
-    // 1. Testa a conexão (Ping)
-    await testConnection(url, token);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoadingSession(false);
+    });
 
-    // 2. Garante a inicialização das abas na planilha
-    await initializeSpreadsheet(url, token);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoadingSession(false);
+    });
 
-    // 3. Salva no localStorage em caso de sucesso
-    localStorage.setItem('finance_app_url', url);
-    localStorage.setItem('finance_secret_token', token);
-    localStorage.setItem('finance_active_user', currentUser);
+    return () => subscription.unsubscribe();
+  }, []);
 
-    setAppUrl(url);
-    setSecretToken(token);
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('finance_app_url');
-    localStorage.removeItem('finance_secret_token');
-    setIsAuthenticated(false);
-    setAppUrl('');
-    setSecretToken('');
-  };
-
-  const handleCopyLink = () => {
-    const cleanUrl = window.location.origin + window.location.pathname;
-    const link = `${cleanUrl}#url=${encodeURIComponent(appUrl)}&token=${encodeURIComponent(secretToken)}`;
-    navigator.clipboard.writeText(link)
-      .then(() => {
-        alert('Link de Acesso Rápido copiado! Adicione este link aos seus favoritos ou envie no WhatsApp para logar automaticamente.');
-      })
-      .catch(() => {
-        alert('Não foi possível copiar o link automaticamente.');
-      });
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
   };
 
   const handleUserToggle = (user: 'Wesley' | 'Luana') => {
@@ -78,8 +42,25 @@ function App() {
     localStorage.setItem('finance_active_user', user);
   };
 
-  if (!isAuthenticated) {
-    return <SetupScreen onConnect={handleConnect} />;
+  if (loadingSession) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        gap: '16px',
+        color: 'var(--color-primary)'
+      }}>
+        <Wallet size={40} className="animate-glow" />
+        <span style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>Carregando finanças...</span>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <AuthScreen />;
   }
 
   return (
@@ -135,29 +116,6 @@ function App() {
               </button>
             </div>
 
-            {/* Link de Acesso Rápido Button */}
-            <button
-              onClick={handleCopyLink}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                transition: 'color 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-              title="Copiar Link de Acesso Rápido"
-            >
-              <Link size={18} />
-              <span className="hidden-mobile" style={{ fontSize: '0.85rem' }}>Link de Acesso</span>
-            </button>
-
             {/* Logout Button */}
             <button
               onClick={handleLogout}
@@ -188,39 +146,39 @@ function App() {
       <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {activeTab === 'dashboard' && (
           <Dashboard
-            url={appUrl}
-            token={secretToken}
+            url=""
+            token=""
           />
         )}
 
         {activeTab === 'new-expense' && (
           <ExpenseForm
-            url={appUrl}
-            token={secretToken}
-            currentUser={currentUser}
-          />
-        )}
-
-        {activeTab === 'recurring' && (
-          <RecurringPanel
-            url={appUrl}
-            token={secretToken}
+            url=""
+            token=""
             currentUser={currentUser}
           />
         )}
 
         {activeTab === 'cards' && (
           <CardInvoicePanel
-            url={appUrl}
-            token={secretToken}
+            url=""
+            token=""
+            currentUser={currentUser}
+          />
+        )}
+
+        {activeTab === 'recurring' && (
+          <RecurringPanel
+            url=""
+            token=""
             currentUser={currentUser}
           />
         )}
 
         {activeTab === 'history' && (
           <HistoryPanel
-            url={appUrl}
-            token={secretToken}
+            url=""
+            token=""
             currentUser={currentUser}
           />
         )}
