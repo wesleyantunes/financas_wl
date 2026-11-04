@@ -87,3 +87,4 @@ for m in months_to_test:
     print(f"\n[{m}] Recurring Status:")
     print(f"  Despesas: {len(pending_exp)} PENDENTES ({len(shared_pending)} compartilhadas, {len(wesley_pending)} Wesley) | {len(paid_exp)} PAGAS")
     print(f"  Recebimentos: {len(pending_inc)} PENDENTES | {len(paid_inc)} PAGOS/RECEBIDOS")
+

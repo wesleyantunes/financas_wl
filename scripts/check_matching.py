@@ -56,3 +56,4 @@ print(f"Matching: {len(inc_matching)}")
 print(f"Non-matching: {len(inc_non_matching)}")
 for i in inc_non_matching:
     print(f"  Non-matching inc: {i['date']} | {i['description']} | R$ {i['value']}")
+

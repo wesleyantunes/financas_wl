@@ -268,6 +268,60 @@ export async function addRecurringRule(
   }
 }
 
+/**
+ * Atualiza regra recorrente no Supabase
+ */
+export async function updateRecurringRule(
+  url: string,
+  token: string,
+  ruleId: string,
+  updates: {
+    description?: string;
+    estimated_value?: number;
+    due_day?: number;
+    owner?: string;
+    category_type?: string;
+    active?: boolean;
+  }
+): Promise<{ success: boolean }> {
+  void url;
+  void token;
+  try {
+    const { error } = await supabase
+      .from('recurring_rules')
+      .update(updates)
+      .eq('id', ruleId);
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao atualizar regra recorrente:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exclui regra recorrente no Supabase
+ */
+export async function deleteRecurringRule(
+  url: string,
+  token: string,
+  ruleId: string
+): Promise<{ success: boolean }> {
+  void url;
+  void token;
+  try {
+    const { error } = await supabase
+      .from('recurring_rules')
+      .delete()
+      .eq('id', ruleId);
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao excluir regra recorrente:', error);
+    throw error;
+  }
+}
+
 export interface MonthlySummary {
   mes: string;
   totalDespesas: number;

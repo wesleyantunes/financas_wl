@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getMonthData, addExpenses } from '../services/api';
+import { getMonthData, addExpenses, updateRecurringRule, deleteRecurringRule } from '../services/api';
 import type { RawExpense, RawRecurringRule } from '../services/api';
 import { RecurringConfig } from './RecurringConfig';
-import { Calendar, Check, AlertCircle, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Calendar, Check, AlertCircle, ChevronLeft, ChevronRight, Settings, Pencil, Trash2 } from 'lucide-react';
 
 interface RecurringPanelProps {
   url: string;
@@ -39,6 +39,15 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
   const [confirmPaymentMethod, setConfirmPaymentMethod] = useState<'Pix' | 'Cartão Wesley' | 'Cartão Luana' | 'Boleto'>('Pix');
   const [confirming, setConfirming] = useState(false);
   const [activeTab, setActiveTab] = useState<'Todos' | 'Wesley' | 'Luana' | 'Compartilhado'>('Todos');
+
+  // Edit recurring rule modal states
+  const [showEditModal, setShowEditModal] = useState<RawRecurringRule | null>(null);
+  const [editDescription, setEditDescription] = useState('');
+  const [editEstimatedValue, setEditEstimatedValue] = useState('');
+  const [editDueDay, setEditDueDay] = useState('10');
+  const [editType, setEditType] = useState<'Fixo' | 'Variável'>('Fixo');
+  const [editOwner, setEditOwner] = useState<'Wesley' | 'Luana' | 'Compartilhado'>('Compartilhado');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchMonthData = useCallback(async () => {
     setLoading(true);
@@ -154,6 +163,80 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
       alert(err instanceof Error ? err.message : 'Erro ao confirmar pagamento.');
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const handleOpenEdit = (rule: RawRecurringRule) => {
+    setShowEditModal(rule);
+    setEditDescription(rule.Descrição || rule.desc || '');
+    const val = rule.ValorEstimado !== undefined ? rule.ValorEstimado : (rule['Valor Estimado'] !== undefined ? rule['Valor Estimado'] : '');
+    setEditEstimatedValue(String(val || ''));
+    const day = rule.DiaVencimento || rule['Dia Vencimento'] || rule.DiaRecebimento || rule['Dia Recebimento'] || 10;
+    setEditDueDay(String(day));
+    setEditType((rule.Tipo || rule.tipo) === 'Variável' ? 'Variável' : 'Fixo');
+    const defaultOwner = recurringType === 'receivable' ? 'Wesley' : 'Compartilhado';
+    setEditOwner((rule.Dono || rule.dono || defaultOwner) as 'Wesley' | 'Luana' | 'Compartilhado');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!showEditModal) return;
+
+    const valNum = parseFloat(editEstimatedValue);
+    if (isNaN(valNum) || valNum <= 0) {
+      alert('Por favor, insira um valor previsto válido.');
+      return;
+    }
+
+    const dayNum = parseInt(editDueDay, 10);
+    if (isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
+      alert('O dia deve ser entre 1 e 31.');
+      return;
+    }
+
+    const ruleId = showEditModal.ID || showEditModal.id;
+    if (!ruleId) {
+      alert('Identificador da regra não encontrado.');
+      return;
+    }
+
+    setSavingEdit(true);
+    try {
+      await updateRecurringRule(url, token, ruleId, {
+        description: editDescription.trim(),
+        estimated_value: valNum,
+        due_day: dayNum,
+        owner: editOwner,
+        category_type: editType
+      });
+
+      setShowEditModal(null);
+      await fetchMonthData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao atualizar regra recorrente.');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteRule = async () => {
+    if (!showEditModal) return;
+    const ruleId = showEditModal.ID || showEditModal.id;
+    if (!ruleId) return;
+
+    if (!confirm(`Tem certeza que deseja excluir a regra "${editDescription}"?`)) {
+      return;
+    }
+
+    setSavingEdit(true);
+    try {
+      await deleteRecurringRule(url, token, ruleId);
+      setShowEditModal(null);
+      await fetchMonthData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao excluir regra recorrente.');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -315,14 +398,24 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <strong style={{ color: 'var(--text-title)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <strong style={{ color: 'var(--text-title)', marginRight: '6px' }}>
                         R$ {estimatedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </strong>
                       <button 
+                        type="button"
+                        className="btn btn-secondary" 
+                        onClick={() => handleOpenEdit(rule)}
+                        title="Editar valor previsto e regra"
+                        style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Pencil size={14} /> Editar
+                      </button>
+                      <button 
+                        type="button"
                         className="btn btn-primary" 
                         onClick={() => handleOpenConfirm(rule)}
-                        style={{ width: 'auto', padding: '8px 16px', fontSize: '0.85rem' }}
+                        style={{ width: 'auto', padding: '6px 14px', fontSize: '0.85rem' }}
                       >
                         Confirmar
                       </button>
@@ -367,10 +460,19 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <strong style={{ color: 'var(--color-primary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <strong style={{ color: 'var(--color-primary)', marginRight: '6px' }}>
                         R$ {finalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </strong>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary" 
+                        onClick={() => handleOpenEdit(rule)}
+                        title="Editar valor previsto e regra"
+                        style={{ width: 'auto', padding: '6px 10px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Pencil size={13} /> Editar Regra
+                      </button>
                     </div>
                   </div>
                 );
@@ -707,6 +809,142 @@ export const RecurringPanel: React.FC<RecurringPanelProps> = ({ url, token, curr
                 >
                   {confirming ? 'Registrando...' : 'Confirmar'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição da Regra Recorrente */}
+      {showEditModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div className="glass-card" style={{ width: '90%', maxWidth: '440px', padding: '28px', backgroundColor: 'var(--bg-secondary)' }}>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Pencil size={18} style={{ color: 'var(--color-primary)' }} />
+              {recurringType === 'expense' ? 'Editar Despesa Recorrente' : 'Editar Recebimento Recorrente'}
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
+              Altere o valor previsto e as configurações da regra <strong>{showEditModal.Descrição || showEditModal.desc}</strong>
+            </p>
+
+            <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">Descrição</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  disabled={savingEdit}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: '600', color: 'var(--color-primary)' }}>
+                  Valor Previsto / Estimado (R$)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  className="form-control"
+                  style={{ fontSize: '1.1rem', fontWeight: 'bold' }}
+                  value={editEstimatedValue}
+                  onChange={(e) => setEditEstimatedValue(e.target.value)}
+                  disabled={savingEdit}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  {recurringType === 'expense' ? 'Dia de Vencimento (1 a 31)' : 'Dia de Recebimento (1 a 31)'}
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  className="form-control"
+                  value={editDueDay}
+                  onChange={(e) => setEditDueDay(e.target.value)}
+                  disabled={savingEdit}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Dono / Responsável</label>
+                <select
+                  className="form-control"
+                  value={editOwner}
+                  onChange={(e) => setEditOwner(e.target.value as 'Wesley' | 'Luana' | 'Compartilhado')}
+                  disabled={savingEdit}
+                >
+                  {recurringType === 'expense' && <option value="Compartilhado">Compartilhado</option>}
+                  <option value="Wesley">Wesley</option>
+                  <option value="Luana">Luana</option>
+                </select>
+              </div>
+
+              {recurringType === 'expense' && (
+                <div className="form-group">
+                  <label className="form-label">Tipo de Despesa</label>
+                  <select
+                    className="form-control"
+                    value={editType}
+                    onChange={(e) => setEditType(e.target.value as 'Fixo' | 'Variável')}
+                    disabled={savingEdit}
+                  >
+                    <option value="Fixo">Fixo</option>
+                    <option value="Variável">Variável</option>
+                  </select>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleDeleteRule}
+                  disabled={savingEdit}
+                  style={{ width: 'auto', padding: '8px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Trash2 size={14} /> Excluir
+                </button>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={() => setShowEditModal(null)}
+                    disabled={savingEdit}
+                    style={{ width: 'auto', padding: '8px 16px' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    disabled={savingEdit}
+                    style={{ width: 'auto', padding: '8px 20px' }}
+                  >
+                    {savingEdit ? 'Salvando...' : 'Salvar Alterações'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

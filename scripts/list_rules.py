@@ -12,3 +12,4 @@ with urllib.request.urlopen(req) as resp:
 print(f"Total rules: {len(rules)}")
 for r in rules:
     print(f"{r['id']} | {r['rule_type']} | {r['description']} | R$ {r['estimated_value']} | Dia {r['due_day']} | Dono: {r['owner']} | Categoria: {r.get('category_type')}")
+
