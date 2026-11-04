@@ -167,3 +167,4 @@ print(df_exp.groupby('month')['value'].agg(['count', 'sum']))
 df_inc = pd.DataFrame(incomes)
 print("\nIncomes by month:")
 print(df_inc.groupby('month')['value'].agg(['count', 'sum']))
+

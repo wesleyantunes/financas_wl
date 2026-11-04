@@ -19,3 +19,4 @@ for i in incomes:
 
 for (desc, tag, owner), count in sorted(inc_dict.items()):
     print(f'{count}x "{desc}" -> Tag: {tag} | Owner: {owner}')
+

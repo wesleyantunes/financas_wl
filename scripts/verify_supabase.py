@@ -51,3 +51,4 @@ print('\nReceitas por Mês no Supabase:')
 for m in sorted(inc_by_month):
     cnt, val = inc_by_month[m]
     print(f'  {m}: {cnt} receitas | R$ {val:,.2f}')
+
