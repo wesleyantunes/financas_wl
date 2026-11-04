@@ -420,3 +420,4 @@ with open('src/components/RecurringPanel.tsx', 'w', encoding='utf-8') as f:
     f.write(content)
 
 print("Updated RecurringPanel.tsx successfully!")
+
