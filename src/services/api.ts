@@ -342,7 +342,77 @@ export async function getMonthlySummaries(
   token: string,
   meses: string[]
 ): Promise<{ success: boolean; summaries: MonthlySummary[] }> {
-  return await request<{ success: boolean; summaries: MonthlySummary[] }>(url, token, 'getMonthlySummaries', { meses });
+  void url;
+  void token;
+  try {
+    if (!meses || meses.length === 0) {
+      return { success: true, summaries: [] };
+    }
+
+    const sortedMonths = [...meses].sort();
+    const minMonth = sortedMonths[0];
+    const maxMonth = sortedMonths[sortedMonths.length - 1];
+    const startDate = `${minMonth}-01`;
+
+    const [maxY, maxM] = maxMonth.split('-').map(Number);
+    const lastDay = new Date(maxY, maxM, 0).getDate();
+    const endDate = `${maxMonth}-${String(lastDay).padStart(2, '0')}`;
+
+    const [expensesRes, incomesRes] = await Promise.all([
+      supabase
+        .from('expenses')
+        .select('date, value, tag, user_owner')
+        .gte('date', startDate)
+        .lte('date', endDate),
+      supabase
+        .from('incomes')
+        .select('date, value, tag, user_owner')
+        .gte('date', startDate)
+        .lte('date', endDate)
+    ]);
+
+    if (expensesRes.error) throw expensesRes.error;
+    if (incomesRes.error) throw incomesRes.error;
+
+    const allExpenses = (expensesRes.data || []) as Array<{ date: string; value: number; tag: string; user_owner: string }>;
+    const allIncomes = (incomesRes.data || []) as Array<{ date: string; value: number; tag: string; user_owner: string }>;
+
+    const summaries: MonthlySummary[] = meses.map((mes) => {
+      const mExpenses = allExpenses.filter((e) => e.date && e.date.startsWith(mes));
+      const mIncomes = allIncomes.filter((i) => i.date && i.date.startsWith(mes));
+
+      const totalDespesas = mExpenses.reduce((acc, curr) => acc + (Number(curr.value) || 0), 0);
+      const totalRecebimentos = mIncomes.reduce((acc, curr) => acc + (Number(curr.value) || 0), 0);
+
+      const porTag: Record<string, number> = {};
+      const porDono: { Wesley: number; Luana: number } = { Wesley: 0, Luana: 0 };
+
+      for (const exp of mExpenses) {
+        const val = Number(exp.value) || 0;
+        const tag = exp.tag || 'Outros';
+        porTag[tag] = (porTag[tag] || 0) + val;
+
+        if (exp.user_owner === 'Luana') {
+          porDono.Luana += val;
+        } else {
+          porDono.Wesley += val;
+        }
+      }
+
+      return {
+        mes,
+        totalDespesas,
+        totalRecebimentos,
+        porTag,
+        porDono
+      };
+    });
+
+    return { success: true, summaries };
+  } catch (error) {
+    console.error('Erro ao buscar resumos mensais no Supabase:', error);
+    return { success: false, summaries: [] };
+  }
 }
 
 /**
@@ -361,7 +431,138 @@ export async function getForecastData(
   futureExpenses: RawExpense[];
   futureReceivables: RawExpense[];
 }> {
-  return await request(url, token, 'getForecastData', { horizonDays });
+  void url;
+  void token;
+  try {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + horizonDays);
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    const curMonthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+
+    const [expensesRes, incomesRes, recurringRes] = await Promise.all([
+      supabase
+        .from('expenses')
+        .select('*')
+        .gte('date', curMonthStart)
+        .lte('date', endDateStr)
+        .order('date', { ascending: true }),
+      supabase
+        .from('incomes')
+        .select('*')
+        .gte('date', curMonthStart)
+        .lte('date', endDateStr)
+        .order('date', { ascending: true }),
+      supabase
+        .from('recurring_rules')
+        .select('*')
+        .eq('active', true)
+    ]);
+
+    if (expensesRes.error) throw expensesRes.error;
+    if (incomesRes.error) throw incomesRes.error;
+    if (recurringRes.error) throw recurringRes.error;
+
+    const allExpenses = (expensesRes.data || []) as DbExpense[];
+    const allIncomes = (incomesRes.data || []) as DbIncome[];
+    const allRules = (recurringRes.data || []) as DbRecurringRule[];
+
+    const pastExpenses = allExpenses.filter((e) => e.date <= todayStr);
+    const pastIncomes = allIncomes.filter((i) => i.date <= todayStr);
+    const totalPastExp = pastExpenses.reduce((acc, curr) => acc + (Number(curr.value) || 0), 0);
+    const totalPastInc = pastIncomes.reduce((acc, curr) => acc + (Number(curr.value) || 0), 0);
+    const saldoRealizado = totalPastInc - totalPastExp;
+
+    const futureExpenses: RawExpense[] = allExpenses
+      .filter((e) => e.date >= todayStr)
+      .map((e) => ({
+        ID: e.id,
+        id: e.id,
+        Data: e.date,
+        data: e.date,
+        Descrição: e.description,
+        desc: e.description,
+        Valor: Number(e.value),
+        valor: Number(e.value),
+        Tag: e.tag,
+        tag: e.tag
+      }));
+
+    const futureReceivables: RawExpense[] = allIncomes
+      .filter((i) => i.date >= todayStr)
+      .map((i) => ({
+        ID: i.id,
+        id: i.id,
+        Data: i.date,
+        data: i.date,
+        Descrição: i.description,
+        desc: i.description,
+        Valor: Number(i.value),
+        valor: Number(i.value),
+        Tag: i.tag,
+        tag: i.tag
+      }));
+
+    const recurring: ForecastRecurringRule[] = allRules
+      .filter((r) => r.rule_type === 'expense')
+      .map((r) => ({
+        ID: r.id,
+        id: r.id,
+        Descrição: r.description,
+        desc: r.description,
+        ValorEstimado: Number(r.estimated_value),
+        'Valor Estimado': Number(r.estimated_value),
+        DiaVencimento: Number(r.due_day),
+        'Dia Vencimento': Number(r.due_day),
+        Tipo: r.category_type || 'Fixo',
+        tipo: r.category_type || 'Fixo',
+        Dono: r.owner,
+        dono: r.owner,
+        Ativo: r.active,
+        ativo: r.active
+      }));
+
+    const recurringReceivables: RawRecurringRule[] = allRules
+      .filter((r) => r.rule_type === 'income')
+      .map((r) => ({
+        ID: r.id,
+        id: r.id,
+        Descrição: r.description,
+        desc: r.description,
+        ValorEstimado: Number(r.estimated_value),
+        'Valor Estimado': Number(r.estimated_value),
+        DiaRecebimento: Number(r.due_day),
+        'Dia Recebimento': Number(r.due_day),
+        Dono: r.owner,
+        dono: r.owner,
+        Ativo: r.active,
+        ativo: r.active
+      }));
+
+    return {
+      success: true,
+      horizonDays,
+      saldoRealizado,
+      recurring,
+      recurringReceivables,
+      futureExpenses,
+      futureReceivables
+    };
+  } catch (error) {
+    console.error('Erro ao buscar dados de previsão no Supabase:', error);
+    return {
+      success: false,
+      horizonDays,
+      saldoRealizado: 0,
+      recurring: [],
+      recurringReceivables: [],
+      futureExpenses: [],
+      futureReceivables: []
+    };
+  }
 }
 
 /**

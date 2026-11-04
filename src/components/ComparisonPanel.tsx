@@ -76,8 +76,9 @@ export const ComparisonPanel: React.FC<ComparisonPanelProps> = ({ url, token }) 
     setLoadingCompare(true);
     try {
       const res = await getMonthlySummaries(url, token, [compareA, compareB]);
-      const a = res.summaries.find(s => s.mes === compareA) || null;
-      const b = res.summaries.find(s => s.mes === compareB) || null;
+      const summaries = res?.summaries || [];
+      const a = summaries.find(s => s.mes === compareA) || null;
+      const b = summaries.find(s => s.mes === compareB) || null;
       setCompareData({ A: a, B: b });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar a comparação de competências.');
