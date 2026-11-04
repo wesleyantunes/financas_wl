@@ -12,7 +12,13 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Python
+__pycache__/
+*.pyc
+
+# User data
+dados/
+
 .vscode/*
 !.vscode/extensions.json
 .idea
